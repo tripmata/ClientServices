@@ -1,0 +1,116 @@
+<?php
+
+	$ret = new stdClass();
+
+                    if($GLOBALS['user']->Id != "")
+                    {
+                        
+
+                        $audit = null;
+                        $item = null;
+
+                        if(strtolower($_REQUEST['item_type']) == "bar_item")
+                        {
+                            if($GLOBALS['user']->Role->Bar->WriteAccess)
+                            {
+                                $audit = new Baraudit($GLOBALS['subscriber']);
+                                $item = new Baritem($GLOBALS['subscriber']);
+                            }
+                        }
+                        if(strtolower($_REQUEST['item_type']) == "kitchen_item")
+                        {
+                            if($GLOBALS['user']->Role->Kitchen->WriteAccess)
+                            {
+                                $audit = new Kitchenaudit($GLOBALS['subscriber']);
+                                $item = new Kitchenitem($GLOBALS['subscriber']);
+                            }
+                        }
+                        if(strtolower($_REQUEST['item_type']) == "laundry_item")
+                        {
+                            if($GLOBALS['user']->Role->Laundry->WriteAccess)
+                            {
+                                $audit = new Laundryaudit($GLOBALS['subscriber']);
+                                $item = new Laundryitem($GLOBALS['subscriber']);
+                            }
+                        }
+                        if(strtolower($_REQUEST['item_type']) == "pastry_item")
+                        {
+                            if($GLOBALS['user']->Role->Bakery->WriteAccess)
+                            {
+                                $audit = new Pastryaudit($GLOBALS['subscriber']);
+                                $item = new Pastryitem($GLOBALS['subscriber']);
+                            }
+                        }
+                        if(strtolower($_REQUEST['item_type']) == "pool_item")
+                        {
+                            if($GLOBALS['user']->Role->Pool->WriteAccess)
+                            {
+                                $audit = new Poolaudit($GLOBALS['subscriber']);
+                                $item = new Poolitem($GLOBALS['subscriber']);
+                            }
+                        }
+                        if(strtolower($_REQUEST['item_type']) == "room_item")
+                        {
+                            if($GLOBALS['user']->Role->Rooms->WriteAccess)
+                            {
+                                $audit = new Roomaudit($GLOBALS['subscriber']);
+                                $item = new Roomitem($GLOBALS['subscriber']);
+                            }
+                        }
+                        if(strtolower($_REQUEST['item_type']) == "store_item")
+                        {
+                            if($GLOBALS['user']->Role->Store->WriteAccess)
+                            {
+                                $audit = new Storeaudit($GLOBALS['subscriber']);
+                                $item = new Storeitem($GLOBALS['subscriber']);
+                            }
+                        }
+
+
+                        if($audit !== null)
+                        {
+                            $audit->Initialize($_REQUEST['auditid']);
+                            $item->Initialize($_REQUEST['itemid']);
+
+                            $auItem = new Audititem($GLOBALS['subscriber']);
+                            $auItem->Item = $item;
+                            $auItem->Stock = $item->Stock;
+                            $auItem->Counted = $_REQUEST['counted'];
+                            $auItem->Save();
+
+                            if(doubleval($auItem->Counted) < doubleval($auItem->Stock))
+                            {
+                                $audit->Shortage ++;
+                                $audit->Shortagetotal += (doubleval($auItem->Stock) - doubleval($auItem->Counted));
+                            }
+                            else if(doubleval($auItem->Counted) > doubleval($auItem->Stock))
+                            {
+                                $audit->Surplus ++;
+                                $audit->Surplustotal += (doubleval($auItem->Counted) - doubleval($auItem->Stock));
+                            }
+
+                            array_push($audit->Items, $auItem->Id);
+                            $audit->Save();
+
+                            $ret->Accuratestock = $audit->AccurateStockCount();
+                            $ret->Shortagestock = $audit->SurplusStockCount();
+                            $ret->SurplusStock = $audit->ShortageStockCount();
+
+
+                            $ret->data = $auItem;
+                            $ret->status = "success";
+                            $ret->message = "Audit item saved successfully";
+                        }
+                        else
+                        {
+                            $ret->status = "access denied";
+                            $ret->message = "You do not have the required privilege to complete the operation";
+                        }
+                    }
+                    else
+                    {
+                        $ret->status = "login";
+                        $ret->data = "login & try again";
+                    }
+
+	echo json_encode($ret);
