@@ -174,10 +174,9 @@
                 $meta = addslashes($this->Color."-".$this->Model."-".$this->Type."-for-rent-".$this->Cityname."-".$this->Statename."-".Random::GenerateId(10));
             }
 
-
 			if($res = $db->query("SELECT vehicleid FROM vehicle WHERE vehicleid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE vehicle SET image1='$image1',image2='$image2',image3='$image3',image4='$image4',type='$type',model='$model',color='$color',seats='$seats',description='$description',ac='$ac',automatic='$automatic',tv='$tv',fridge='$fridge',seatwarmer='$seatwarmer',cupholder='$cupholder',status='$status',driver='$driver',price='$price',extramilage='$extramilage',milagecap='$milagecap',owner='$owner',city='$city',state='$state',features='$features',approved='$approved',brand='$brand',statename='$statename',cityname='$cityname',address='$address',rating='$rating',views='$views',cancellation='$cancellation',offlinepay='$offlinepay',meta='$meta',hasdriver='$hasdriver' WHERE vehicleid = '$id'");
+				$db->query("UPDATE vehicle SET image1='$image1',image2='$image2',image3='$image3',image4='$image4',`type`='$type',model='$model',color='$color',seats=$seats,`description`='$description',ac='$ac',`automatic`=$automatic,tv=$tv,fridge=$fridge,seatwarmer=$seatwarmer,cupholder=$cupholder,`status`=$status,driver='$driver',price=$price,extramilage=$extramilage,milagecap=$milagecap,`owner`='$owner',city='$city',`state`='$state',features='$features',approved=$approved,brand='$brand',statename='$statename',cityname='$cityname',`address`='$address',rating=$rating,views=$views,cancellation=$cancellation,offlinepay=$offlinepay,meta='$meta',hasdriver=$hasdriver WHERE vehicleid = '$id'");
 			}
 			else
 			{
@@ -188,7 +187,7 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO vehicle(vehicleid,created,image1,image2,image3,image4,type,model,color,seats,description,ac,automatic,tv,fridge,seatwarmer,cupholder,status,driver,price,extramilage,milagecap,owner,city,state,features,approved,brand,cityname,statename,address,rating,views,cancellation,offlinepay,meta,hasdriver) VALUES ('$id','$created','$image1','$image2','$image3','$image4','$type','$model','$color','$seats','$description','$ac','$automatic','$tv','$fridge','$seatwarmer','$cupholder','$status','$driver','$price','$extramilage','$milagecap','$owner','$city','$state','$features','$approved','$brand','$cityname','$statename','$address','$rating','$views','$cancellation','$offlinepay','$meta','$hasdriver')");
+				$db->query("INSERT INTO vehicle(vehicleid,created,image1,image2,image3,image4,`type`,model,color,seats,`description`,ac,`automatic`,tv,fridge,seatwarmer,cupholder,`status`,driver,price,extramilage,milagecap,`owner`,city,`state`,features,approved,brand,cityname,statename,`address`,rating,views,cancellation,offlinepay,meta,hasdriver) VALUES ('$id','$created','$image1','$image2','$image3','$image4','$type','$model','$color',$seats,'$description',$ac,$automatic,$tv,$fridge,$seatwarmer,$cupholder,$status,'$driver',$price,$extramilage,$milagecap,'$owner','$city','$state','$features',$approved,'$brand','$cityname','$statename','$address',$rating,$views,$cancellation,$offlinepay,'$meta',$hasdriver)");
 			}
 		}
 

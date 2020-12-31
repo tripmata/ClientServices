@@ -1,6 +1,7 @@
 <?php
 
     $site = new Site($GLOBALS['subscriber']);
+    
 
     $ret = new stdClass();
     $ret->status = "success";

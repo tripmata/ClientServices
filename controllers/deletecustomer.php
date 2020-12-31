@@ -6,15 +6,15 @@ if($GLOBALS['user']->Id != "")
 {
     if($GLOBALS['user']->Role->Customers->WriteAccess)
     {
-        $p = new Property($_REQUEST['property']);
+        $p = new Property($_REQUEST['property']); 
 
         $customer = new Guest(new Subscriber($p->Databasename, $p->DatabaseUser, $p->DatabasePassword));
-        $customer->Initialize($_REQUEST['Customerid']);
-        $customer->Delete();
+        //$customer->Initialize($_REQUEST['Customerid']);
+        $customer->Delete($_REQUEST['Customerid']);
 
         $ret->status = "success";
         $ret->data = "success";
-        $ret->message = "Customer have been deleted";
+        $ret->message = "Customer ban operation completed";
     }
     else
     {

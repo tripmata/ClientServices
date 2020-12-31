@@ -2,9 +2,9 @@
 
 	$ret = new stdClass();
 
-    if($GLOBALS['user']->Id != "")
+    if ($GLOBALS['user']->Id != "")
     {
-        if($GLOBALS['user']->Role->Discount->WriteAccess)
+        if ($GLOBALS['user']->Role->Discount->WriteAccess)
         {
             $p = new Property($_REQUEST['property']);
 
@@ -94,10 +94,10 @@
             $discount->Tohour = Convert::ToInt($_REQUEST['tohour']);
             $discount->Fromminuite = Convert::ToInt($_REQUEST['fromminuite']);
             $discount->Tominuite = Convert::ToInt($_REQUEST['tominuite']);
-            $discount->Fromday = Convert::ToInt($_REQUEST['fromday']);
-            $discount->Today = Convert::ToInt($_REQUEST['today']);
-            $discount->Frommonth = $_REQUEST['frommonth'];
-            $discount->Tomonth = $_REQUEST['tomonth'];
+            $discount->Fromday = 0; //Convert::ToInt($_REQUEST['fromday']);
+            $discount->Today = 0; //Convert::ToInt($_REQUEST['today']);
+            $discount->Frommonth = ''; //$_REQUEST['frommonth'];
+            $discount->Tomonth = ''; //$_REQUEST['tomonth'];
             $discount->Frommeridean = $_REQUEST['frommeridean'];
             $discount->Tomeridean = $_REQUEST['tomeridean'];
             $discount->Isstaff = Convert::ToBool($_REQUEST['isstaff']);
@@ -113,12 +113,34 @@
             $discount->Amountbased = Convert::ToBool($_REQUEST['amountbased']);
 
             $discount->Ontotal = Convert::ToBool($_REQUEST['ontotal']);
+            $discount->PaymentMode = $_REQUEST['paymentmode'];
+            $discount->PaymentCollection = $_REQUEST['paymentCollection'];
 
-
-            $discount->Save();
+            // load from date, to date
+            $discount->DateFrom = isset($_REQUEST['fromdate']) ? strtotime($_REQUEST['fromdate']) : $discount->DateFrom;
+            $discount->DateTo = isset($_REQUEST['fromdate']) ? strtotime($_REQUEST['todate']) : $discount->DateTo;
 
             $ret->status = "success";
             $ret->message = "Discount saved successfully";
+
+            if ($_REQUEST['id'] != '' || $discount->Autoapply == false)
+            {
+                $discount->Save();
+            }
+            else
+            {
+                // check same condition
+                if ($discount->sameConditionDoesNotApply())
+                {
+                    $discount->Save();
+                }
+                else
+                {
+                    $ret->status = 'error';
+                    $ret->message = $discount->Message;
+                }
+            }
+            
         }
         else
         {

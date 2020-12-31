@@ -16,7 +16,7 @@
         {
             $ret->status = "success";
             $ret->data = Property::ByCustomer($customer);
-            $ret->message = "Property saved successfully";
+            $ret->message = "Property fetched successfully";
         }
         else
         {
@@ -29,4 +29,5 @@
         $ret->status = "login";
         $ret->data = "login";
     }
+
     echo json_encode($ret);

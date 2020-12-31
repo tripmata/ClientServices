@@ -39,7 +39,6 @@
 			$this->subscriber = $sub;
 		}
 
-
 		public function Initialize($arg=null)
 		{
 			if($arg != null)
@@ -78,6 +77,9 @@
 					$this->Suspended = Convert::ToBool($row['suspended']);
 
 					$shifts = json_decode($row['shift']);
+					
+					// extract shifts
+					$shifts = is_array($shifts) && count($shifts) > 0 ? explode(',', $shifts[0]) : [];
 
 					for($i = 0; $i < count($shifts); $i++)
 					{
@@ -116,10 +118,11 @@
 			$salary = floatval($this->Salary);
 			$status = Convert::ToInt($this->Status);
 			$suspended = Convert::ToInt($this->Suspended);
+			$property = $_REQUEST['property'];
 
 			if($res = $db->query("SELECT staffid FROM staff WHERE staffid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE staff SET name='$name',surname='$surname',phone='$phone',email='$email',nationality='$nationality',state='$state',address='$address',sex='$sex',dateofbirth='$dateofbirth',department='$department',shift='$shift',position='$position',bank='$bank',accountname='$accountname',accountnumber='$accountnumber',passport='$passport',fullshot='$fullshot',biodata='$biodata',salary='$salary',status='$status',suspended='$suspended' WHERE staffid = '$id'");
+				$db->query("UPDATE staff SET `name`='$name',surname='$surname',phone='$phone',email='$email',nationality='$nationality',`state`='$state',`address`='$address',sex='$sex',dateofbirth='$dateofbirth',department='$department',shift='$shift',position='$position',bank='$bank',accountname='$accountname',accountnumber='$accountnumber',passport='$passport',fullshot='$fullshot',biodata='$biodata',salary='$salary',`status`='$status',suspended='$suspended' WHERE staffid = '$id'");
 			}
 			else
 			{
@@ -130,7 +133,7 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO staff(staffid,created,name,surname,phone,email,nationality,state,address,sex,dateofbirth,department,shift,position,bank,accountname,accountnumber,passport,fullshot,biodata,salary,status,suspended) VALUES ('$id','$created','$name','$surname','$phone','$email','$nationality','$state','$address','$sex','$dateofbirth','$department','$shift','$position','$bank','$accountname','$accountnumber','$passport','$fullshot','$biodata','$salary','$status','$suspended')");
+				$db->query("INSERT INTO staff (staffid,created,`name`,surname,phone,email,nationality,`state`,`address`,sex,dateofbirth,department,shift,position,bank,accountname,accountnumber,passport,fullshot,biodata,salary,`status`,suspended,propertyid) VALUES ('$id','$created','$name','$surname','$phone','$email','$nationality','$state','$address','$sex','$dateofbirth','$department','$shift','$position','$bank','$accountname','$accountnumber','$passport','$fullshot','$biodata','$salary','$status','$suspended','$property')");
 			}
 		}
 
@@ -139,7 +142,8 @@
 			$db = $this->subscriber->GetDB();
 
 			$id = $this->Id;
-			$db->query("DELETE FROM staff WHERE staffid='$id'");
+			$property = $_REQUEST['property'];
+			$db->query("DELETE FROM staff WHERE staffid='$id' AND propertyid = '$property'");
 
             Contactcollection::Removefromalllist($this->subscriber, $this->Id, $this->Type);
 
@@ -155,44 +159,48 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = $_REQUEST['property'];
 
 			$res = $db->query("SELECT * FROM staff WHERE name LIKE '%$term%' OR surname LIKE '%$term%' OR phone LIKE '%$term%' OR email LIKE '%$term%' OR nationality LIKE '%$term%' OR state LIKE '%$term%' OR address LIKE '%$term%' OR sex LIKE '%$term%' OR dateofbirth LIKE '%$term%' OR department LIKE '%$term%' OR shift LIKE '%$term%' OR position LIKE '%$term%' OR bank LIKE '%$term%' OR accountname LIKE '%$term%' OR accountnumber LIKE '%$term%' OR passport LIKE '%$term%' OR fullshot LIKE '%$term%' OR biodata LIKE '%$term%' OR salary LIKE '%$term%' OR status LIKE '%$term%' OR suspended LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
-				$ret[$i] = new Staff($subscriber);
-				$ret[$i]->Id = $row['staffid'];
-				$ret[$i]->Created = new WixDate($row['created']);
-				$ret[$i]->Name = $row['name'];
-				$ret[$i]->Surname = $row['surname'];
-				$ret[$i]->Phone = $row['phone'];
-				$ret[$i]->Email = $row['email'];
-				$ret[$i]->Nationality = Country::ByCode($row['nationality']);
-				$ret[$i]->State = $row['state'];
-				$ret[$i]->Address = $row['address'];
-				$ret[$i]->Sex = $row['sex'];
-				$ret[$i]->Dateofbirth = new WixDate($row['dateofbirth']);
-				$ret[$i]->Department = new department($subscriber);
-				$ret[$i]->Department->Initialize($row['department']);
-				$ret[$i]->Shift = array();
-				$ret[$i]->Position = $row['position'];
-				$ret[$i]->Bank = $row['bank'];
-				$ret[$i]->Accountname = $row['accountname'];
-				$ret[$i]->Accountnumber = $row['accountnumber'];
-				$ret[$i]->Passport = $row['passport'];
-				$ret[$i]->Fullshot = $row['fullshot'];
-				$ret[$i]->Biodata = $row['biodata'];
-				$ret[$i]->Salary = $row['salary'];
-				$ret[$i]->Status = Convert::ToBool($row['status']);
-				$ret[$i]->Suspended = Convert::ToBool($row['suspended']);
-
-				$shifts = json_decode($row['shift']);
-
-				for($j = 0; $j < count($shifts); $j++)
+				if ($row['propertyid'] == $property)
 				{
-					$ret[$i]->Shift[$j] = new Shift($subscriber);
-					$ret[$i]->Shift[$j]->Initialize($shifts[$j]);
+					$ret[$i] = new Staff($subscriber);
+					$ret[$i]->Id = $row['staffid'];
+					$ret[$i]->Created = new WixDate($row['created']);
+					$ret[$i]->Name = $row['name'];
+					$ret[$i]->Surname = $row['surname'];
+					$ret[$i]->Phone = $row['phone'];
+					$ret[$i]->Email = $row['email'];
+					$ret[$i]->Nationality = Country::ByCode($row['nationality']);
+					$ret[$i]->State = $row['state'];
+					$ret[$i]->Address = $row['address'];
+					$ret[$i]->Sex = $row['sex'];
+					$ret[$i]->Dateofbirth = new WixDate($row['dateofbirth']);
+					$ret[$i]->Department = new department($subscriber);
+					$ret[$i]->Department->Initialize($row['department']);
+					$ret[$i]->Shift = array();
+					$ret[$i]->Position = $row['position'];
+					$ret[$i]->Bank = $row['bank'];
+					$ret[$i]->Accountname = $row['accountname'];
+					$ret[$i]->Accountnumber = $row['accountnumber'];
+					$ret[$i]->Passport = $row['passport'];
+					$ret[$i]->Fullshot = $row['fullshot'];
+					$ret[$i]->Biodata = $row['biodata'];
+					$ret[$i]->Salary = $row['salary'];
+					$ret[$i]->Status = Convert::ToBool($row['status']);
+					$ret[$i]->Suspended = Convert::ToBool($row['suspended']);
+
+					$shifts = json_decode($row['shift']);
+
+					for($j = 0; $j < count($shifts); $j++)
+					{
+						$ret[$i]->Shift[$j] = new Shift($subscriber);
+						$ret[$i]->Shift[$j]->Initialize($shifts[$j]);
+					}
+					$i++;
 				}
-				$i++;
 			}
 			return $ret;
 		}
@@ -202,8 +210,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM staff WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT * FROM staff WHERE ".$field." ='$term' AND propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Staff($subscriber);
@@ -249,8 +258,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM staff ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT * FROM staff WHERE propertyid = '$property' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Staff($subscriber);
@@ -296,8 +306,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM staff");
+			$res = $db->query("SELECT * FROM staff where propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Staff($subscriber);
@@ -338,13 +349,12 @@
 			return $ret;
 		}
 
-
 		//Hand crafted methods
-
 		public static function BiodataExist($data, Subscriber $sub)
 		{
 			$db = $sub->GetDB();
-			return $db->query("SELECT biodata FROM staff WHERE biodata='$data'")->num_rows > 0;
+			$property = $_REQUEST['property'];
+			return $db->query("SELECT biodata FROM staff WHERE biodata='$data' AND propertyid = '$property'")->num_rows > 0;
 		}
 
 

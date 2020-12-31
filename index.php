@@ -1,6 +1,9 @@
 <?php
     session_start();
 
+    // set the default time zone
+    date_default_timezone_set('Africa/Lagos');
+
     // set the default content type
     header('Content-Type: application/json');
 
@@ -9,6 +12,18 @@
 
     // clean $_REQUEST array
     Sanitize::removeHTMLFromRequests();
+
+    // set session
+    if (isset($_REQUEST['user_token'])) {
+
+        $_SESSION['user_token'] = $_REQUEST['user_token'];
+
+        // check for $_REQUEST['usersess']
+        if (!isset($_REQUEST['usersess']))
+        {
+            $_REQUEST['usersess'] = '';
+        }
+    }
 
     $subscriber = new Subscriber();
 

@@ -47,7 +47,7 @@
 				
 					$this->Id = $row['lodginghistoryid'];
 					$this->Created = new WixDate($row['created']);
-					$this->Guest = new Guest($this->subscriber);
+					$this->Guest = new CustomerByProperty($this->subscriber);
 					$this->Guest->Initialize($row['guest']);
 					$this->Subguest = [];
 

@@ -59,7 +59,7 @@
 
 			if($res = $db->query("SELECT availabilityid FROM availability WHERE availabilityid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE availability SET room='$room',startdate='$startdate',stopdate='$stopdate',available='$available',status='$status' WHERE availabilityid = '$id'");
+				$db->query("UPDATE availability SET room='$room',startdate='$startdate',stopdate='$stopdate',available='$available',status=$status WHERE availabilityid = '$id'");
 			}
 			else
 			{
@@ -70,7 +70,8 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO availability(availabilityid,created,room,startdate,stopdate,available,status) VALUES ('$id','$created','$room','$startdate','$stopdate','$available','$status')");
+				
+				$q = $db->query("INSERT INTO availability (`availabilityid`,`created`,`room`,`startdate`,`stopdate`,`available`,`status`) VALUES ('$id','$created','$room','$startdate','$stopdate','$available',$status)");
 			}
 		}
 
@@ -186,20 +187,26 @@
 
             $id = is_a($room, "Roomcategory") ? $room->Id : $room;
 
-            $res = $db->query("SELECT * FROM availability WHERE room='$id' ORDER BY startdate");
-            while(($row = $res->fetch_assoc()) != null)
-            {
-                $ret[$i] = new Availability($subscriber);
-                $ret[$i]->Id = $row['availabilityid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Room = new Roomcategory($subscriber);
-                $ret[$i]->Room->Initialize($row['room']);
-                $ret[$i]->Startdate = new WixDate($row['startdate']);
-                $ret[$i]->Stopdate = new WixDate($row['stopdate']);
-                $ret[$i]->Available = Convert::ToInt($row['available']);
-                $ret[$i]->Status = Convert::ToBool($row['status']);
-                $i++;
-            }
+			$res = $db->query("SELECT * FROM `availability` WHERE room='$id' ORDER BY startdate");
+			
+			if (is_object($res) && $res->num_rows > 0) :
+
+				while (($row = $res->fetch_assoc()) != null)
+				{
+					$ret[$i] = new Availability($subscriber);
+					$ret[$i]->Id = $row['availabilityid'];
+					$ret[$i]->Created = new WixDate($row['created']);
+					$ret[$i]->Room = new Roomcategory($subscriber);
+					$ret[$i]->Room->Initialize($row['room']);
+					$ret[$i]->Startdate = new WixDate($row['startdate']);
+					$ret[$i]->Stopdate = new WixDate($row['stopdate']);
+					$ret[$i]->Available = Convert::ToInt($row['available']);
+					$ret[$i]->Status = Convert::ToBool($row['status']);
+					$i++;
+				}
+
+			endif;
+
             return $ret;
         }
 	}

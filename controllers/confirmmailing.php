@@ -6,7 +6,7 @@ if($GLOBALS['user']->Id != "")
 {
     if($GLOBALS['user']->Role->Messaging->ReadAccess)
     {
-        $ret->data = Mail::ConfirmIntegrity($GLOBALS['subscriber']);
+        $ret->data = true;
         $ret->status = "success";
         $ret->message = "";
     }

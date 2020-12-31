@@ -26,7 +26,8 @@
 		public $User = "";
 		public $Checkouts = array();
 		public $Bills = 0.0;
-		public $Bookingnumber = "";
+        public $Bookingnumber = "";
+
 
         private $subscriber = null;
 
@@ -49,7 +50,7 @@
 				
 					$this->Id = $row['lodgingid'];
 					$this->Created = new WixDate($row['created']);
-                    $this->Guest = new Guest($this->subscriber);
+                    $this->Guest = new CustomerByProperty($this->subscriber);
                     $this->Guest->Initialize($row['guest']);
                     $this->Subguest = [];
 
@@ -221,49 +222,54 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
 			$res = $db->query("SELECT lodgingid FROM lodging WHERE guest LIKE '%$term%' OR subguest LIKE '%$term%' OR rooms LIKE '%$term%' OR checkin LIKE '%$term%' OR checkout LIKE '%$term%' OR days LIKE '%$term%' OR adults LIKE '%$term%' OR children LIKE '%$term%' OR pet LIKE '%$term%' OR paid LIKE '%$term%' OR total LIKE '%$term%' OR taxes LIKE '%$term%' OR discount LIKE '%$term%' OR paidamount LIKE '%$term%' OR roomcategory LIKE '%$term%' OR user LIKE '%$term%' OR checkouts LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
-                $ret[$i] = new Lodging($subscriber);
-                $ret[$i]->Id = $row['lodgingid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Guest = new Guest($subscriber);
-                $ret[$i]->Guest->Initialize($row['guest']);
-                $ret[$i]->Subguest = json_decode($row['subguest']);
-                $ret[$i]->Rooms = [];
+                if ($row['propertyid'] == $property) :
 
-                $r = json_decode($row['rooms']);
+                    $ret[$i] = new Lodging($subscriber);
+                    $ret[$i]->Id = $row['lodgingid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->Guest = new CustomerByProperty($subscriber);
+                    $ret[$i]->Guest->Initialize($row['guest']);
+                    $ret[$i]->Subguest = json_decode($row['subguest']);
+                    $ret[$i]->Rooms = [];
 
-                if(is_array($r))
-                {
-                    for($i = 0; $i < count($r); $i++)
+                    $r = json_decode($row['rooms']);
+
+                    if(is_array($r))
                     {
-                        $ro = new Room($subscriber);
-                        $ro->Initialize($r[$i]);
+                        for($i = 0; $i < count($r); $i++)
+                        {
+                            $ro = new Room($subscriber);
+                            $ro->Initialize($r[$i]);
 
-                        array_push($ret[$i]->Rooms, $ro);
+                            array_push($ret[$i]->Rooms, $ro);
+                        }
                     }
-                }
 
-                $ret[$i]->Checkin = new WixDate($row['checkin']);
-                $ret[$i]->Checkout = new WixDate($row['checkout']);
-                $ret[$i]->Days = Convert::ToInt($row['days']);
-                $ret[$i]->Adults = Convert::ToInt($row['adults']);
-                $ret[$i]->Children = Convert::ToInt($row['children']);
-                $ret[$i]->Pet = Convert::ToBool($row['pet']);
-                $ret[$i]->Paid = Convert::ToBool($row['paid']);
-                $ret[$i]->Total = doubleval($row['total']);
-                $ret[$i]->Taxes = doubleval($row['taxes']);
-                $ret[$i]->Discount = doubleval($row['discount']);
-                $ret[$i]->Paidamount = doubleval($row['paidamount']);
-                $ret[$i]->Roomcategory = json_decode($row['roomcategory']);
-                $ret[$i]->User = $row['user'];
-                $ret[$i]->Checkouts = json_decode($row['checkouts']);
-                $ret[$i]->Bills = doubleval($row['bills']);
-                $ret[$i]->Bookingnumber = $row['booking'];
-				$i++;
+                    $ret[$i]->Checkin = new WixDate($row['checkin']);
+                    $ret[$i]->Checkout = new WixDate($row['checkout']);
+                    $ret[$i]->Days = Convert::ToInt($row['days']);
+                    $ret[$i]->Adults = Convert::ToInt($row['adults']);
+                    $ret[$i]->Children = Convert::ToInt($row['children']);
+                    $ret[$i]->Pet = Convert::ToBool($row['pet']);
+                    $ret[$i]->Paid = Convert::ToBool($row['paid']);
+                    $ret[$i]->Total = doubleval($row['total']);
+                    $ret[$i]->Taxes = doubleval($row['taxes']);
+                    $ret[$i]->Discount = doubleval($row['discount']);
+                    $ret[$i]->Paidamount = doubleval($row['paidamount']);
+                    $ret[$i]->Roomcategory = json_decode($row['roomcategory']);
+                    $ret[$i]->User = $row['user'];
+                    $ret[$i]->Checkouts = json_decode($row['checkouts']);
+                    $ret[$i]->Bills = doubleval($row['bills']);
+                    $ret[$i]->Bookingnumber = $row['booking'];
+                    $i++;
+                
+                endif;
 			}
 			return $ret;
 		}
@@ -272,9 +278,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM lodging WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT * FROM lodging WHERE ".$field." ='$term' AND propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Lodging($subscriber);
@@ -322,9 +329,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM lodging ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT * FROM lodging WHERE propertyid = '$property' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Lodging($subscriber);
@@ -366,57 +374,121 @@
 				$i++;
 			}
 			return $ret;
-		}
+        }
+        
+        public static function canShow($row, bool $showAll = false) : bool
+        {
+            // @var bool $continue
+            $continue = false;
 
-		public static function All(Subscriber $subscriber)
-		{
-			$db = $subscriber->GetDB();
-			$ret = array();
-			$i = 0;
+            // get date
+            $dateTime = new DateTime((isset($_REQUEST['dueDate']) ? $_REQUEST['dueDate'] : ''));
 
-			$res = $db->query("SELECT * FROM lodging");
-			while(($row = $res->fetch_assoc()) != null)
-			{
-				$ret[$i] = new Lodging($subscriber);
-				$ret[$i]->Id = $row['lodgingid'];
-				$ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Guest = new Guest($subscriber);
-                $ret[$i]->Guest->Initialize($row['guest']);
-                $ret[$i]->Subguest = json_decode($row['subguest']);
-                $ret[$i]->Rooms = [];
+            // checkout date
+            if (date('d/m/Y', $row['checkout']) == $dateTime->format('d/m/Y')) $continue = true;
 
-                $r = json_decode($row['rooms']);
+            // check check in date
+            if (date('d/m/Y', $row['checkin']) == $dateTime->format('d/m/Y')) $continue = true;
 
-                if(is_array($r))
+            // get last 30 days
+            $last30Days = strtotime('today - 30 days');
+
+            // manage range
+            if (isset($_REQUEST['dueDate']) && isset($_REQUEST['dueDateTo']))
+            {
+                // can we add
+                if ($continue === false)
                 {
-                    for($j = 0; $j < count($r); $j++)
+                    // only proceed if date range exists
+                    if ($_REQUEST['dueDate'] != '' && $_REQUEST['dueDateTo'] != '')
                     {
-                        $ro = new Room($subscriber);
-                        $ro->Initialize($r[$j]);
+                        // get date time 2
+                        $dateTime2 = new DateTime(date('m/d/Y', $row['checkin']));
 
-                        array_push($ret[$i]->Rooms, $ro);
+                        // build time for range
+                        $rangeTime = new DateTime($_REQUEST['dueDateTo']);
+
+                        // check now
+                        if (($dateTime2->getTimestamp() <= $rangeTime->getTimestamp()) && ($rangeTime->getTimestamp() > $dateTime->getTimestamp())) $continue = true;
+                    }
+                    else
+                    {
+                        if (intval($row['checkin']) >= $last30Days) $continue = true;
                     }
                 }
 
+                // manage bool
+                if ($_REQUEST['dueDate'] == '' && $_REQUEST['dueDateTo'] == '' && $_REQUEST['tab'] == 'all')
+                {
+                    $continue = true;
+                }
+            }
 
-                $ret[$i]->Checkin = new WixDate($row['checkin']);
-                $ret[$i]->Checkout = new WixDate($row['checkout']);
-                $ret[$i]->Days = Convert::ToInt($row['days']);
-                $ret[$i]->Adults = Convert::ToInt($row['adults']);
-                $ret[$i]->Children = Convert::ToInt($row['children']);
-                $ret[$i]->Pet = Convert::ToBool($row['pet']);
-                $ret[$i]->Paid = Convert::ToBool($row['paid']);
-                $ret[$i]->Total = doubleval($row['total']);
-                $ret[$i]->Taxes = doubleval($row['taxes']);
-                $ret[$i]->Discount = doubleval($row['discount']);
-                $ret[$i]->Paidamount = doubleval($row['paidamount']);
-                $ret[$i]->Roomcategory = json_decode($row['roomcategory']);
-                $ret[$i]->User = $row['user'];
-                $ret[$i]->Checkouts = json_decode($row['checkouts']);
-                $ret[$i]->Bills = doubleval($row['bills']);
-                $ret[$i]->Bookingnumber = $row['booking'];
-				$i++;
-			}
+            if ($showAll !== false) $continue = $showAll;
+
+            // return bool
+            return $continue;
+        }
+
+		public static function All(Subscriber $subscriber, bool $showAll = false)
+		{   
+			$db = $subscriber->GetDB();
+			$ret = array();
+            $i = 0;
+            $property = $_REQUEST['property'];
+
+            // exclude checkout
+            $other = ($_REQUEST['dueDateTo'] == '' && $_REQUEST['dueDate'] == '') ? 'AND checkedout = 0' : '';
+
+            // add other
+            $res = $db->query("SELECT * FROM lodging WHERE propertyid = '$property' $other");
+            
+			while(($row = $res->fetch_assoc()) != null)
+			{
+                if (self::canShow($row, $showAll)) :
+
+                    $ret[$i] = new Lodging($subscriber);
+                    $ret[$i]->Id = $row['lodgingid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->Guest = new CustomerByProperty($subscriber);
+                    $ret[$i]->Guest->Initialize($row['guest']);
+                    $ret[$i]->Subguest = json_decode($row['subguest']);
+                    $ret[$i]->Rooms = [];
+
+                    $r = json_decode($row['rooms']);
+
+                    if(is_array($r))
+                    {
+                        for($j = 0; $j < count($r); $j++)
+                        {
+                            $ro = new Room($subscriber);
+                            $ro->Initialize($r[$j]);
+
+                            array_push($ret[$i]->Rooms, $ro);
+                        }
+                    }
+
+                    $ret[$i]->Checkin = new WixDate($row['checkin']);
+                    $ret[$i]->Checkout = new WixDate($row['checkout']);
+                    $ret[$i]->Days = Convert::ToInt($row['days']);
+                    $ret[$i]->Adults = Convert::ToInt($row['adults']);
+                    $ret[$i]->Children = Convert::ToInt($row['children']);
+                    $ret[$i]->Pet = Convert::ToBool($row['pet']);
+                    $ret[$i]->Paid = Convert::ToBool($row['paid']);
+                    $ret[$i]->Total = doubleval($row['total']);
+                    $ret[$i]->Taxes = doubleval($row['taxes']);
+                    $ret[$i]->Discount = doubleval($row['discount']);
+                    $ret[$i]->Paidamount = doubleval($row['paidamount']);
+                    $ret[$i]->Roomcategory = json_decode($row['roomcategory']);
+                    $ret[$i]->User = $row['user'];
+                    $ret[$i]->Checkouts = json_decode($row['checkouts']);
+                    $ret[$i]->Bills = doubleval($row['bills']);
+                    $ret[$i]->Bookingnumber = $row['booking'];
+                    $i++;
+
+                endif;
+            }
+            
 			return $ret;
 		}
 
@@ -473,54 +545,60 @@
         {
             $db = $subscriber->GetDB();
             $ret = array();
+            $property = $_REQUEST['property'];
             $i = 0;
 
-            $start = strtotime(date("m/d/Y"));
-            $stop = (($start) + ((60 * 60) * 24));
+            $today = strtotime(date("m/d/Y", time()));
+            $tomorrow = strtotime(date('Y/m/d', strtotime('tomorrow')));
 
-            $res = $db->query("SELECT * FROM lodging WHERE checkout >= '$start' AND checkout < '$stop'");
+            $res = $db->query("SELECT * FROM lodging WHERE checkout = '$today' AND propertyid = '$property'");
+
             while(($row = $res->fetch_assoc()) != null)
             {
-                $ret[$i] = new Lodging($subscriber);
-                $ret[$i]->Id = $row['lodgingid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Guest = new Guest($subscriber);
-                $ret[$i]->Guest->Initialize($row['guest']);
-                $ret[$i]->Subguest = json_decode($row['subguest']);
+                if (self::canShow($row)) :
 
-                $ret[$i]->Rooms = [];
+                    $ret[$i] = new Lodging($subscriber);
+                    $ret[$i]->Id = $row['lodgingid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->Guest = new CustomerByProperty($subscriber);
+                    $ret[$i]->Guest->Initialize($row['guest']);
+                    $ret[$i]->Subguest = json_decode($row['subguest']);
 
-                $r = json_decode($row['rooms']);
+                    $ret[$i]->Rooms = [];
 
-                if(is_array($r))
-                {
-                    for($j = 0; $j < count($r); $j++)
+                    $r = json_decode($row['rooms']);
+
+                    if(is_array($r))
                     {
-                        $ro = new Room($subscriber);
-                        $ro->Initialize($r[$j]);
+                        for($j = 0; $j < count($r); $j++)
+                        {
+                            $ro = new Room($subscriber);
+                            $ro->Initialize($r[$j]);
 
-                        array_push($ret[$i]->Rooms, $ro);
+                            array_push($ret[$i]->Rooms, $ro);
+                        }
                     }
-                }
 
+                    $ret[$i]->Checkin = new WixDate($row['checkin']);
+                    $ret[$i]->Checkout = new WixDate($row['checkout']);
+                    $ret[$i]->Days = Convert::ToInt($row['days']);
+                    $ret[$i]->Adults = Convert::ToInt($row['adults']);
+                    $ret[$i]->Children = Convert::ToInt($row['children']);
+                    $ret[$i]->Pet = Convert::ToBool($row['pet']);
+                    $ret[$i]->Paid = Convert::ToBool($row['paid']);
+                    $ret[$i]->Total = doubleval($row['total']);
+                    $ret[$i]->Taxes = doubleval($row['taxes']);
+                    $ret[$i]->Discount = doubleval($row['discount']);
+                    $ret[$i]->Paidamount = doubleval($row['paidamount']);
+                    $ret[$i]->Roomcategory = json_decode($row['roomcategory']);
+                    $ret[$i]->User = $row['user'];
+                    $ret[$i]->Checkouts = json_decode($row['checkouts']);
+                    $ret[$i]->Bills = doubleval($row['bills']);
+                    $ret[$i]->Bookingnumber = $row['booking'];
+                    $i++;
 
-                $ret[$i]->Checkin = new WixDate($row['checkin']);
-                $ret[$i]->Checkout = new WixDate($row['checkout']);
-                $ret[$i]->Days = Convert::ToInt($row['days']);
-                $ret[$i]->Adults = Convert::ToInt($row['adults']);
-                $ret[$i]->Children = Convert::ToInt($row['children']);
-                $ret[$i]->Pet = Convert::ToBool($row['pet']);
-                $ret[$i]->Paid = Convert::ToBool($row['paid']);
-                $ret[$i]->Total = doubleval($row['total']);
-                $ret[$i]->Taxes = doubleval($row['taxes']);
-                $ret[$i]->Discount = doubleval($row['discount']);
-                $ret[$i]->Paidamount = doubleval($row['paidamount']);
-                $ret[$i]->Roomcategory = json_decode($row['roomcategory']);
-                $ret[$i]->User = $row['user'];
-                $ret[$i]->Checkouts = json_decode($row['checkouts']);
-                $ret[$i]->Bills = doubleval($row['bills']);
-                $ret[$i]->Bookingnumber = $row['booking'];
-                $i++;
+                endif;
+
             }
             return $ret;
         }
@@ -530,54 +608,104 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $property = $_REQUEST['property'];
 
-            $date = strtotime(date("m/d/Y")) + ((60 * 60) * 24);
+            //$date = strtotime(date("m/d/Y")) + ((60 * 60) * 24);
+            $time = mktime(12,0,1,date('n'),date('j'),date('Y'));
 
-            $res = $db->query("SELECT * FROM lodging WHERE checkout >= '$date'");
+            $res = $db->query("SELECT * FROM lodging WHERE checkout < '$time' AND checkedout=0 AND propertyid = '$property' ORDER BY id DESC");
 
-            $res = $db->query("SELECT * FROM lodging");
             while(($row = $res->fetch_assoc()) != null)
             {
-                $ret[$i] = new Lodging($subscriber);
-                $ret[$i]->Id = $row['lodgingid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Guest = new Guest($subscriber);
-                $ret[$i]->Guest->Initialize($row['guest']);
-                $ret[$i]->Subguest = json_decode($row['subguest']);
-                $ret[$i]->Rooms = [];
+                if (self::canShow($row)) :
 
-                $r = json_decode($row['rooms']);
+                    // @var bool $continue 
+                    $continue = true;
 
-                if(is_array($r))
-                {
-                    for($j = 0; $j < count($r); $j++)
-                    {
-                        $ro = new Room($subscriber);
-                        $ro->Initialize($r[$j]);
+                    // build time
+                    $time = mktime(12,0,1,date('n', $row['checkout']),date('j', $row['checkout']),date('Y', $row['checkout']));
 
-                        array_push($ret[$i]->Rooms, $ro);
-                    }
-                }
+                    // check time
+                    if (time() < $time) $continue = false;
 
-                $ret[$i]->Checkin = new WixDate($row['checkin']);
-                $ret[$i]->Checkout = new WixDate($row['checkout']);
-                $ret[$i]->Days = Convert::ToInt($row['days']);
-                $ret[$i]->Adults = Convert::ToInt($row['adults']);
-                $ret[$i]->Children = Convert::ToInt($row['children']);
-                $ret[$i]->Pet = Convert::ToBool($row['pet']);
-                $ret[$i]->Paid = Convert::ToBool($row['paid']);
-                $ret[$i]->Total = doubleval($row['total']);
-                $ret[$i]->Taxes = doubleval($row['taxes']);
-                $ret[$i]->Discount = doubleval($row['discount']);
-                $ret[$i]->Paidamount = doubleval($row['paidamount']);
-                $ret[$i]->Roomcategory = json_decode($row['roomcategory']);
-                $ret[$i]->User = $row['user'];
-                $ret[$i]->Checkouts = json_decode($row['checkouts']);
-                $ret[$i]->Bills = doubleval($row['bills']);
-                $ret[$i]->Bookingnumber = $row['booking'];
-                $i++;
+                    // can we continue
+                    if ($continue) :
+
+                        $ret[$i] = new Lodging($subscriber);
+                        $ret[$i]->Id = $row['lodgingid'];
+                        $ret[$i]->Created = new WixDate($row['created']);
+                        $ret[$i]->Guest = new CustomerByProperty($subscriber);
+                        $ret[$i]->Guest->Initialize($row['guest']);
+                        $ret[$i]->Subguest = json_decode($row['subguest']);
+                        $ret[$i]->Rooms = [];
+
+                        $r = json_decode($row['rooms']);
+
+                        if(is_array($r))
+                        {
+                            for($j = 0; $j < count($r); $j++)
+                            {
+                                $ro = new Room($subscriber);
+                                $ro->Initialize($r[$j]);
+
+                                array_push($ret[$i]->Rooms, $ro);
+                            }
+                        }
+
+                        $ret[$i]->Checkin = new WixDate($row['checkin']);
+                        $ret[$i]->Checkout = new WixDate($row['checkout']);
+                        $ret[$i]->Days = Convert::ToInt($row['days']);
+                        $ret[$i]->Adults = Convert::ToInt($row['adults']);
+                        $ret[$i]->Children = Convert::ToInt($row['children']);
+                        $ret[$i]->Pet = Convert::ToBool($row['pet']);
+                        $ret[$i]->Paid = Convert::ToBool($row['paid']);
+                        $ret[$i]->Total = doubleval($row['total']);
+                        $ret[$i]->Taxes = doubleval($row['taxes']);
+                        $ret[$i]->Discount = doubleval($row['discount']);
+                        $ret[$i]->Paidamount = doubleval($row['paidamount']);
+                        $ret[$i]->Roomcategory = json_decode($row['roomcategory']);
+                        $ret[$i]->User = $row['user'];
+                        $ret[$i]->Checkouts = json_decode($row['checkouts']);
+                        $ret[$i]->Bills = doubleval($row['bills']);
+                        $ret[$i]->Bookingnumber = $row['booking'];
+                        $i++;
+
+                    endif;
+
+                endif;
             }
+
             return $ret;
+        }
+        
+        public static function overdueCount(Subscriber $subscriber)
+        {
+            $db = $subscriber->GetDB();
+            $property = isset($_REQUEST['propertyid']) ? $_REQUEST['propertyid'] : $_REQUEST['property'];
+            $time = strtotime(date("m/d/Y g:i:s a"));
+            $count = 0;
+            $res = $db->query("SELECT checkout FROM lodging WHERE propertyid = '$property' AND checkout < '$time' AND checkedout=0");
+
+            // do we have something ??
+            if ($res->num_rows > 0) :
+
+                while (($row = $res->fetch_assoc()) != null) :
+
+                    // build time
+                    $time = mktime(12,0,1,date('n', $row['checkout']), date('j', $row['checkout']), date('Y', $row['checkout']));
+
+                    // over due
+                    if (time() > $time) $count++;
+                    
+                endwhile;
+
+            endif;
+
+            // close connection
+            $db->close();
+
+            // retun count
+            return $count;
         }
 
         public static function toDaysCheckin(Subscriber $subscriber)
@@ -585,18 +713,18 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $property = $_REQUEST['property'];
 
-            $date = strtotime(date("m/d/Y"));
+            $today = strtotime(date("m/d/Y", time()));
 
-            $res = $db->query("SELECT * FROM lodging WHERE checkin >= '$date'");
+            $res = $db->query("SELECT * FROM lodging WHERE checkin = '$today' AND propertyid = '$property'");
 
-            $res = $db->query("SELECT * FROM lodging");
             while(($row = $res->fetch_assoc()) != null)
             {
                 $ret[$i] = new Lodging($subscriber);
                 $ret[$i]->Id = $row['lodgingid'];
                 $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Guest = new Guest($subscriber);
+                $ret[$i]->Guest = new CustomerByProperty($subscriber);
                 $ret[$i]->Guest->Initialize($row['guest']);
                 $ret[$i]->Subguest = json_decode($row['subguest']);
                 $ret[$i]->Rooms = [];
@@ -613,7 +741,6 @@
                         array_push($ret[$i]->Rooms, $ro);
                     }
                 }
-
 
                 $ret[$i]->Checkin = new WixDate($row['checkin']);
                 $ret[$i]->Checkout = new WixDate($row['checkout']);

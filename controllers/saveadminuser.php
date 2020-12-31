@@ -9,27 +9,31 @@
             $nuser = new User($GLOBALS['subscriber']);
             $GLOBALS['user']->Initialize($_REQUEST['userid']);
 
-            if(!$GLOBALS['user']->Exist($_REQUEST['username']) || ($GLOBALS['user']->Id != ""))
+            if (!$GLOBALS['user']->Exist($_REQUEST['username']) || ($GLOBALS['user']->Id != ""))
             {
                 $names = explode(" ", trim($_REQUEST['name']));
                 $nuser->Role = $_REQUEST['role'];
                 $nuser->Staffid = $_REQUEST['staffid'];
-                if($nuser->Id === "")
+
+                if ($nuser->Id === "")
                 {
                     $nuser->setPassword($_REQUEST['password']);
                 }
+
                 $nuser->Status = true;
                 $nuser->Username = $_REQUEST['username'];
                 $nuser->Name = trim($names[0]);
-                if(count($names) > 1)
+
+                if (count($names) > 1)
                 {
                     $nuser->Surname = trim($names[(count($names) - 1)]);
                 }
 
-                if($GLOBALS['property'] != null)
+                if ($GLOBALS['property'] != null)
                 {
                     $nuser->Property = $GLOBALS['property'];
                 }
+                
                 $nuser->Save();
 
                 $ret->status = "success";

@@ -43,10 +43,11 @@
 			$id = $this->Id;
 			$created = time();
 			$name = addslashes($this->Name);
+			$property = addslashes($_REQUEST['property']);
 
 			if($res = $db->query("SELECT departmentid FROM department WHERE departmentid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE department SET name='$name' WHERE departmentid = '$id'");
+				if ($id != '') $db->query("UPDATE department SET `name`='$name' WHERE departmentid = '$id'");
 			}
 			else
 			{
@@ -57,7 +58,7 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO department(departmentid,created,name) VALUES ('$id','$created','$name')");
+				$db->query("INSERT INTO department(departmentid,created,`name`,propertyid) VALUES ('$id','$created','$name','$property')");
 			}
 		}
 
@@ -74,8 +75,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = addslashes($_REQUEST['property']);
 
-			$res = $db->query("SELECT departmentid FROM department WHERE name LIKE '%$term%'");
+			$res = $db->query("SELECT departmentid FROM department WHERE `name` LIKE '%$term%' AND propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Department($row['departmentid']);
@@ -89,8 +91,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = addslashes($_REQUEST['property']);
 
-			$res = $db->query("SELECT departmentid FROM department WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT departmentid FROM department WHERE ".$field." ='$term' AND propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Department($row['departmentid']);
@@ -104,8 +107,9 @@
 			$db = $this->subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = addslashes($_REQUEST['property']);
 
-			$res = $db->query("SELECT departmentid FROM department ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT departmentid FROM department WHERE propertyid = '$property' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Department($row['departmentid']);
@@ -119,8 +123,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = addslashes($_REQUEST['property']);
 
-			$res = $db->query("SELECT * FROM department");
+			$res = $db->query("SELECT * FROM department WHERE propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Department($subscriber);
@@ -145,7 +150,8 @@
 		{
 			$db = $this->subscriber->GetDB();
 			$name = $this->Name;
+			$property = addslashes($_REQUEST['property']);
 			
-			return $db->query("SELECT name FROM department WHERE name='$name'")->num_rows > 0;
+			return $db->query("SELECT name FROM department WHERE `name`='$name' AND propertyid = '$property'")->num_rows > 0;
 		}
 	}

@@ -26,7 +26,10 @@
 			{
 				$db = $this->subscriber->GetDB();
 
-				$res = $db->query("SELECT * FROM room WHERE roomid='$arg'");
+				// get the id
+				$id = is_object($arg) ? $arg->Id : $arg;
+
+				$res = $db->query("SELECT * FROM room WHERE roomid='".$id."'");
 
 				if($res->num_rows > 0)
 				{
@@ -52,6 +55,7 @@
 			$number = addslashes($this->Number);
 			$category = addslashes(is_a($this->Category, "Roomcategory") ? $this->Category->Id : $this->Category);
 			$status = addslashes($this->Status);
+			$property = $_REQUEST['property'];
 
 			$f = [];
 
@@ -78,7 +82,7 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO room(roomid,created,number,category,status,features) VALUES ('$id','$created','$number','$category','$status','$features')");
+				$db->query("INSERT INTO room(roomid,created,number,category,status,features,propertyid) VALUES ('$id','$created','$number','$category','$status','$features','$property')");
 			}
 		}
 
@@ -99,8 +103,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM room WHERE number LIKE '%$term%' OR category LIKE '%$term%' OR status LIKE '%$term%'");
+			$res = $db->query("SELECT * FROM room WHERE propertyid = '$propertyid' AND number LIKE '%$term%' OR category LIKE '%$term%' OR status LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Room($subscriber);
@@ -121,8 +126,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM room WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT * FROM room WHERE ".$field." ='$term' AND propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Room($subscriber);
@@ -143,8 +149,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM room ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT * FROM room WHERE propertyid = '$property' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Room($subscriber);
@@ -165,8 +172,9 @@
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
+			$property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM room");
+			$res = $db->query("SELECT * FROM room WHERE propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Room($subscriber);
@@ -182,23 +190,29 @@
 			return $ret;
 		}
 
-
-		public static function RoomCount($subscriber)
+		public static function RoomCount($subscriber, $propertyid = null)
         {
             $db = $subscriber->GetDB();
-            $i = $db->query("SELECT * FROM room")->num_rows;
-            $db->close();
+            $i = $db->query("SELECT * FROM room where propertyid = '$propertyid'")->num_rows;
+			$db->close();
+            return $i;
+		}
+		
+		public static function RoomCountByCategory($subscriber, $category, $propertyid)
+        {
+            $db = $subscriber->GetDB();
+            $i = $db->query("SELECT * FROM room where propertyid = '$propertyid' and category = '$category'")->num_rows;
+			$db->close();
             return $i;
         }
 		
-		public static function Exist(Subscriber $subscriber, $number, $category)
+		public static function Exist(Subscriber $subscriber, $number, $category, $propertyid)
 		{
 			$db = $subscriber->GetDB();
-			$res = $db->query("SELECT number FROM room WHERE number='$number' AND category='$category'");
+			$res = $db->query("SELECT number FROM room WHERE number='$number' AND category='$category' AND propertyid = '$propertyid'");
 			$db->close();
 			return $res->num_rows > 0 ? true : false;
-		}
-		
+		}	
 		
 		//Hand crafted method
 		

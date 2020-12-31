@@ -121,16 +121,17 @@
 			$baseoccupancy = Convert::ToInt($this->Baseoccupancy);
 			$maxoccupancy = Convert::ToInt($this->Maxoccupancy);
 			$extrapersonprice = floatval($this->Extraguestprice);
-			$pets = Convert::ToInt($this->Pets);
+            $pets = Convert::ToInt($this->Pets);
+            $propertyid = $_REQUEST['property'];
 
-			$smoking = Convert::ToBool($this->Smokingpolicy);
-			$childrenpolicy = Convert::ToBool($this->Childrenpolicy);
+			$smoking = Convert::ToBool($this->Smokingpolicy) === false ? 0 : 1;
+			$childrenpolicy = Convert::ToBool($this->Childrenpolicy) === false ? 0 : 1;
 
 			$meta = Router::BuildMeta($this->Name);
 
 			$meta = addslashes($meta);
 
-			if($res = $db->query("SELECT roomcategoryid FROM roomcategory WHERE roomcategoryid='$id'")->num_rows > 0)
+			if($res = $db->query("SELECT roomcategoryid FROM roomcategory WHERE roomcategoryid='$id'")->num_rows > 0 && $id != '')
 			{
 				$db->query("UPDATE roomcategory SET name='$name',promotext='$promotext',status='$status',reservable='$reservable',showpromotion='$showpromotion',onsite='$onsite',sort='$sort',description='$description',price='$price',compareat='$compareat',images='$images',features='$features',services='$services',baseoccupancy='$baseoccupancy',maxoccupancy='$maxoccupancy',extrapersonprice='$extrapersonprice',smoking='$smoking',childrenpolicy='$childrenpolicy',pets='$pets',meta='$meta' WHERE roomcategoryid = '$id'");
 			}
@@ -142,8 +143,9 @@
 				{
 					goto redo;
 				}
-				$this->Id = $id;
-				$db->query("INSERT INTO roomcategory(roomcategoryid,created,name,promotext,status,reservable,showpromotion,onsite,sort,description,price,compareat,images,features,services,baseoccupancy,maxoccupancy,extrapersonprice,childrenpolicy,smoking,pets,meta) VALUES ('$id','$created','$name','$promotext','$status','$reservable','$showpromotion','$onsite','$sort','$description','$price','$compareat','$images','$features','$services','$baseoccupancy','$maxoccupancy','$extrapersonprice','$childrenpolicy','$smoking','$pets','$meta')");
+                $this->Id = $id;
+                $db->query("INSERT INTO roomcategory (roomcategoryid,created,`name`,promotext,`status`,reservable,showpromotion,onsite,sort,`description`,price,compareat,images,features,services,baseoccupancy,maxoccupancy,extrapersonprice,childrenpolicy,smoking,pets,meta,propertyid) VALUES ('$id','$created','$name','$promotext',$status,$reservable,$showpromotion,$onsite,$sort,'$description',$price,$compareat,'$images','$features','$services',$baseoccupancy,$maxoccupancy,$extrapersonprice,$childrenpolicy,$smoking,$pets,'$meta','$propertyid')");
+                
 			}
 		}
 
@@ -159,9 +161,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM roomcategory WHERE name LIKE '%$term%' OR promotext LIKE '%$term%' OR status LIKE '%$term%' OR reservable LIKE '%$term%' OR showpromotion LIKE '%$term%' OR onsite LIKE '%$term%' OR sort LIKE '%$term%' OR description LIKE '%$term%' OR price LIKE '%$term%' OR compareat LIKE '%$term%' OR images LIKE '%$term%' OR features LIKE '%$term%' OR services LIKE '%$term%'");
+			$res = $db->query("SELECT * FROM roomcategory WHERE propertyid = '$property' AND name LIKE '%$term%' OR promotext LIKE '%$term%' OR status LIKE '%$term%' OR reservable LIKE '%$term%' OR showpromotion LIKE '%$term%' OR onsite LIKE '%$term%' OR sort LIKE '%$term%' OR description LIKE '%$term%' OR price LIKE '%$term%' OR compareat LIKE '%$term%' OR images LIKE '%$term%' OR features LIKE '%$term%' OR services LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Roomcategory($subscriber);
@@ -215,9 +218,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM roomcategory WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT * FROM roomcategory WHERE ".$field." ='$term' AND propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Roomcategory($subscriber);
@@ -271,9 +275,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM roomcategory ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT * FROM roomcategory WHERE propertyid = '$property' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Roomcategory($subscriber);
@@ -323,13 +328,13 @@
 			return $ret;
 		}
 
-		public static function All(Subscriber $subscriber)
+		public static function All(Subscriber $subscriber, $property)
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
 			$i = 0;
 
-			$res = $db->query("SELECT * FROM roomcategory");
+			$res = $db->query("SELECT * FROM roomcategory WHERE propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Roomcategory($subscriber);
@@ -356,6 +361,7 @@
                 $ret[$i]->Childrenpolicy = Convert::ToBool($row['childrenpolicy']);
                 $ret[$i]->Pets = Convert::ToBool($row['pets']);
                 $ret[$i]->Meta = $row['meta'];
+                $ret[$i]->Rooms = Room::RoomCountByCategory($subscriber, $row['roomcategoryid'], $row['propertyid']);
 
                 $rates = Roomrate::ByRoomtype($subscriber, $ret[$i]->Id, false);
                 for($j = 0; $j < count($rates); $j++)
@@ -383,8 +389,9 @@
         {
             $db = $subscriber->GetDB();
             $ret = null;
+            $property = $_REQUEST['property'];
 
-            $res = $db->query("SELECT * FROM roomcategory WHERE meta='$meta'");
+            $res = $db->query("SELECT * FROM roomcategory WHERE meta='$meta' AND propertyid = '$property'");
             if($res->num_rows > 0)
             {
                 $row = $res->fetch_assoc();

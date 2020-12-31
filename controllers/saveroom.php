@@ -27,7 +27,7 @@
                 }
             }
 
-            if(($room->Id == "") && (Room::Exist($GLOBALS['subscriber'], $_REQUEST['number'], $_REQUEST['category'])))
+            if(($room->Id == "") && (Room::Exist($GLOBALS['subscriber'], $_REQUEST['number'], $_REQUEST['category'], $_REQUEST['property'])))
             {
                 $ret->status = "failed";
                 $ret->message = "Room exist already";

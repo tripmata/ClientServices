@@ -26,8 +26,8 @@
             $ret->data = [];
             $store = [];
 
-            $store = Guest::Search(new Subscriber($property->Databasename, $property->DatabaseUser, $property->DatabasePassword), $filtervalue);
-            $ret->Total = count(Guest::All(new Subscriber($property->Databasename, $property->DatabaseUser, $property->DatabasePassword)));
+            $store = CustomerByProperty::Search(new Subscriber($property->Databasename, $property->DatabaseUser, $property->DatabasePassword), $filtervalue);
+            $ret->Total = count(CustomerByProperty::All(new Subscriber($property->Databasename, $property->DatabaseUser, $property->DatabasePassword)));
 
             $ret->status = "success";
             $ret->Total = count($store);

@@ -44,7 +44,7 @@
 
 
             $ret->status = "success";
-            $ret->message = "Gallery item have been deleted";
+            $ret->message = "Room category have been created successfully";
             $ret->data = "success";
         }
         else

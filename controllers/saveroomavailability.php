@@ -1,8 +1,11 @@
 <?php
 
-    $p = new Property($_REQUEST['property']);
+$ret = new stdClass();
+$ret->status = "success";
 
-    $availabiity =  new Availability(new Subscriber($p->Databasename, $p->DatabaseUser, $p->DatabasePassword));
+if (isset($_REQUEST['property'])) :
+
+    $availabiity =  new Availability(new Subscriber());
 
     $availabiity->Available = Convert::ToInt($_REQUEST['available']);
     $availabiity->Startdate = strtotime($_REQUEST['start']);
@@ -11,9 +14,15 @@
 
     $availabiity->Save();
 
-    $ret = new stdClass();
-    $ret->status = "success";
     $ret->message = "availability saved";
     $ret->data = $availabiity;
 
-    echo json_encode($ret);
+
+else:
+
+    $ret->status = 'error';
+    $ret->message = 'Missing Property in request';
+
+endif;
+
+echo json_encode($ret);

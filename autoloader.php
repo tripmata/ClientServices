@@ -20,6 +20,6 @@ spl_autoload_register(function (string $class_name) {
     }
     else
     {
-        include_once "core/".$class_name . '.php';
+        include_once "core/". ucfirst($class_name) . '.php';
     }
 });

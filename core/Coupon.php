@@ -108,8 +108,13 @@
 			$pastries = addslashes(json_encode($this->Pastries));
 			$laundry = addslashes(json_encode($this->Laundry));
 			$pool = addslashes(json_encode($this->Pool));
-			$services = addslashes(json_encode($this->Services));
+            $services = addslashes(json_encode($this->Services));
+            $property = $_REQUEST['property'];
 
+            // manage used
+            if ($usecount > 0) $used = 0;
+
+            // update
 			if($res = $db->query("SELECT couponid FROM coupon WHERE couponid='$id'")->num_rows > 0)
 			{
 				$db->query("UPDATE coupon SET title='$title',code='$code',bypercentage='$bypercentage',expires='$expires',used='$used',status='$status',expirydate='$expirydate',value='$value',usecount='$usecount',booking='$booking',food='$food',drinks='$drinks',pastries='$pastries',laundry='$laundry',pool='$pool',services='$services' WHERE couponid = '$id'");
@@ -123,7 +128,7 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO coupon(couponid,created,title,code,bypercentage,expires,used,status,expirydate,value,usecount,booking,food,drinks,pastries,laundry,pool,services) VALUES ('$id','$created','$title','$code','$bypercentage','$expires','$used','$status','$expirydate','$value','$usecount','$booking','$food','$drinks','$pastries','$laundry','$pool','$services')");
+				$db->query("INSERT INTO coupon(couponid,created,title,code,bypercentage,expires,used,status,expirydate,value,usecount,booking,food,drinks,pastries,laundry,`pool`,services,propertyid) VALUES ('$id','$created','$title','$code','$bypercentage','$expires','$used','$status','$expirydate','$value','$usecount','$booking','$food','$drinks','$pastries','$laundry','$pool','$services','$property')");
 			}
 		}
 
@@ -139,13 +144,16 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT couponid FROM coupon WHERE title LIKE '%$term%' OR code LIKE '%$term%' OR bypercentage LIKE '%$term%' OR expires LIKE '%$term%' OR used LIKE '%$term%' OR status LIKE '%$term%' OR expirydate LIKE '%$term%' OR value LIKE '%$term%' OR usecount LIKE '%$term%' OR booking LIKE '%$term%' OR food LIKE '%$term%' OR drinks LIKE '%$term%' OR pastries LIKE '%$term%' OR laundry LIKE '%$term%' OR pool LIKE '%$term%' OR services LIKE '%$term%'");
+			$res = $db->query("SELECT couponid,propertyid FROM coupon WHERE title LIKE '%$term%' OR code LIKE '%$term%' OR bypercentage LIKE '%$term%' OR expires LIKE '%$term%' OR used LIKE '%$term%' OR status LIKE '%$term%' OR expirydate LIKE '%$term%' OR value LIKE '%$term%' OR usecount LIKE '%$term%' OR booking LIKE '%$term%' OR food LIKE '%$term%' OR drinks LIKE '%$term%' OR pastries LIKE '%$term%' OR laundry LIKE '%$term%' OR pool LIKE '%$term%' OR services LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
-				$ret[$i] = $row['couponid'];
-				$i++;
+                if ($row['propertyid'] == $property) :
+                    $ret[$i] = $row['couponid'];
+                    $i++;
+                endif;
 			}
 			return Coupon::GroupInitialize($subscriber, $ret);
 		}
@@ -154,9 +162,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT couponid FROM coupon WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT couponid FROM coupon WHERE ".$field." ='$term' AND propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = $row['couponid'];
@@ -169,9 +178,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT couponid FROM coupon ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT couponid FROM coupon WHERE propertyid = '$property' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = $row['couponid'];
@@ -208,40 +218,46 @@
 						}
 					}
 				}
-			}
+            }
+            
+            $property = $_REQUEST['property'];
 			$i = 0;
 			$res = $db->query("SELECT * FROM coupon".$query." ORDER BY ".$orderBy." ".$order);
 			while(($row = $res->fetch_assoc()) != null)
 			{
-				$ret[$i] = new Coupon($subscriber);
-				$ret[$i]->Id = $row['couponid'];
-				$ret[$i]->Created = new WixDate($row['created']);
-				$ret[$i]->Title = $row['title'];
-				$ret[$i]->Code = $row['code'];
-				$ret[$i]->Bypercentage = Convert::ToBool($row['bypercentage']);
-				$ret[$i]->Expires = Convert::ToBool($row['expires']);
-				$ret[$i]->Used = Convert::ToBool($row['used']);
-				$ret[$i]->Status = Convert::ToBool($row['status']);
-				$ret[$i]->Expirydate = new WixDate($row['expirydate']);
-				$ret[$i]->Value = $row['value'];
-				$ret[$i]->Usecount = $row['usecount'];
-				$ret[$i]->Booking = json_decode($row['booking']);
-				$ret[$i]->Food = json_decode($row['food']);
-				$ret[$i]->Drinks = json_decode($row['drinks']);
-				$ret[$i]->Pastries = json_decode($row['pastries']);
-				$ret[$i]->Laundry = json_decode($row['laundry']);
-				$ret[$i]->Pool = json_decode($row['pool']);
-				$ret[$i]->Services = json_decode($row['services']);
+                if ($row['propertyid'] == $property) :
 
-                if($ret[$i]->Expires)
-                {
-                    if($ret[$i]->Expirydate->getValue() < time())
+                    $ret[$i] = new Coupon($subscriber);
+                    $ret[$i]->Id = $row['couponid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->Title = $row['title'];
+                    $ret[$i]->Code = $row['code'];
+                    $ret[$i]->Bypercentage = Convert::ToBool($row['bypercentage']);
+                    $ret[$i]->Expires = Convert::ToBool($row['expires']);
+                    $ret[$i]->Used = Convert::ToBool($row['used']);
+                    $ret[$i]->Status = Convert::ToBool($row['status']);
+                    $ret[$i]->Expirydate = new WixDate($row['expirydate']);
+                    $ret[$i]->Value = $row['value'];
+                    $ret[$i]->Usecount = $row['usecount'];
+                    $ret[$i]->Booking = json_decode($row['booking']);
+                    $ret[$i]->Food = json_decode($row['food']);
+                    $ret[$i]->Drinks = json_decode($row['drinks']);
+                    $ret[$i]->Pastries = json_decode($row['pastries']);
+                    $ret[$i]->Laundry = json_decode($row['laundry']);
+                    $ret[$i]->Pool = json_decode($row['pool']);
+                    $ret[$i]->Services = json_decode($row['services']);
+
+                    if($ret[$i]->Expires)
                     {
-                        $ret[$i]->Expired = true;
+                        if($ret[$i]->Expirydate->getValue() < time())
+                        {
+                            $ret[$i]->Expired = true;
+                        }
                     }
-                }
 
-				$i++;
+                    $i++;
+                
+                endif;
 			}
 			return $ret;
 		}
@@ -255,6 +271,7 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $property = $_REQUEST['property'];
 
             if($searchterm == "")
             {
@@ -268,51 +285,7 @@
             $res = $db->query($query);
             while(($row = $res->fetch_assoc()) != null)
             {
-                $ret[$i] = new Coupon($subscriber);
-                $ret[$i]->Id = $row['couponid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Title = $row['title'];
-                $ret[$i]->Code = $row['code'];
-                $ret[$i]->Bypercentage = Convert::ToBool($row['bypercentage']);
-                $ret[$i]->Expires = Convert::ToBool($row['expires']);
-                $ret[$i]->Used = Convert::ToBool($row['used']);
-                $ret[$i]->Status = Convert::ToBool($row['status']);
-                $ret[$i]->Expirydate = Convert::ToBool($row['expirydate']);
-                $ret[$i]->Value = $row['value'];
-                $ret[$i]->Usecount = $row['usecount'];
-                $ret[$i]->Booking = json_decode($row['booking']);
-                $ret[$i]->Food = json_decode($row['food']);
-                $ret[$i]->Drinks = json_decode($row['drinks']);
-                $ret[$i]->Pastries = json_decode($row['pastries']);
-                $ret[$i]->Laundry = json_decode($row['laundry']);
-                $ret[$i]->Pool = json_decode($row['pool']);
-                $ret[$i]->Services = json_decode($row['services']);
-                $i++;
-            }
-            return $ret;
-        }
-
-        public static function Unusedcoupon(Subscriber $subscriber, $searchterm)
-        {
-            $db = $subscriber->GetDB();
-            $ret = array();
-            $i = 0;
-
-            $tm = time();
-
-            if($searchterm == "")
-            {
-                $query = "SELECT * FROM coupon WHERE used=0";
-            }
-            else
-            {
-                $query = "SELECT * FROM coupon WHERE used=0 AND (title LIKE '%$searchterm%' OR code LIKE '%$searchterm%')";
-            }
-            $res = $db->query($query);
-            while(($row = $res->fetch_assoc()) != null)
-            {
-                if((($row['expires'] == 1) && ($row['expirydate'] > $tm)) || ($row['expires'] == 0))
-                {
+                if ($row['propertyid'] == $property) :
                     $ret[$i] = new Coupon($subscriber);
                     $ret[$i]->Id = $row['couponid'];
                     $ret[$i]->Created = new WixDate($row['created']);
@@ -333,6 +306,57 @@
                     $ret[$i]->Pool = json_decode($row['pool']);
                     $ret[$i]->Services = json_decode($row['services']);
                     $i++;
+                endif;
+            }
+            return $ret;
+        }
+
+        public static function Unusedcoupon(Subscriber $subscriber, $searchterm)
+        {
+            $db = $subscriber->GetDB();
+            $ret = array();
+            $i = 0;
+            $property = $_REQUEST['property'];
+
+            $tm = time();
+
+            if($searchterm == "")
+            {
+                $query = "SELECT * FROM coupon WHERE used=0";
+            }
+            else
+            {
+                $query = "SELECT * FROM coupon WHERE used=0 AND (title LIKE '%$searchterm%' OR code LIKE '%$searchterm%')";
+            }
+            $res = $db->query($query);
+            while(($row = $res->fetch_assoc()) != null)
+            {
+                if((($row['expires'] == 1) && ($row['expirydate'] > $tm)) || ($row['expires'] == 0))
+                {
+                    if ($row['propertyid'] == $property) :
+
+                        $ret[$i] = new Coupon($subscriber);
+                        $ret[$i]->Id = $row['couponid'];
+                        $ret[$i]->Created = new WixDate($row['created']);
+                        $ret[$i]->Title = $row['title'];
+                        $ret[$i]->Code = $row['code'];
+                        $ret[$i]->Bypercentage = Convert::ToBool($row['bypercentage']);
+                        $ret[$i]->Expires = Convert::ToBool($row['expires']);
+                        $ret[$i]->Used = Convert::ToBool($row['used']);
+                        $ret[$i]->Status = Convert::ToBool($row['status']);
+                        $ret[$i]->Expirydate = Convert::ToBool($row['expirydate']);
+                        $ret[$i]->Value = $row['value'];
+                        $ret[$i]->Usecount = $row['usecount'];
+                        $ret[$i]->Booking = json_decode($row['booking']);
+                        $ret[$i]->Food = json_decode($row['food']);
+                        $ret[$i]->Drinks = json_decode($row['drinks']);
+                        $ret[$i]->Pastries = json_decode($row['pastries']);
+                        $ret[$i]->Laundry = json_decode($row['laundry']);
+                        $ret[$i]->Pool = json_decode($row['pool']);
+                        $ret[$i]->Services = json_decode($row['services']);
+                        $i++;
+
+                    endif;
                 }
             }
             return $ret;
@@ -345,6 +369,7 @@
             $i = 0;
 
             $tm = time();
+            $property = $_REQUEST['property'];
 
             if($searchterm == "")
             {
@@ -358,27 +383,31 @@
             $res = $db->query($query);
             while(($row = $res->fetch_assoc()) != null)
             {
-                $ret[$i] = new Coupon($subscriber);
-                $ret[$i]->Id = $row['couponid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Title = $row['title'];
-                $ret[$i]->Code = $row['code'];
-                $ret[$i]->Bypercentage = Convert::ToBool($row['bypercentage']);
-                $ret[$i]->Expires = Convert::ToBool($row['expires']);
-                $ret[$i]->Used = Convert::ToBool($row['used']);
-                $ret[$i]->Status = Convert::ToBool($row['status']);
-                $ret[$i]->Expirydate = Convert::ToBool($row['expirydate']);
-                $ret[$i]->Value = $row['value'];
-                $ret[$i]->Usecount = $row['usecount'];
-                $ret[$i]->Booking = json_decode($row['booking']);
-                $ret[$i]->Food = json_decode($row['food']);
-                $ret[$i]->Drinks = json_decode($row['drinks']);
-                $ret[$i]->Pastries = json_decode($row['pastries']);
-                $ret[$i]->Laundry = json_decode($row['laundry']);
-                $ret[$i]->Pool = json_decode($row['pool']);
-                $ret[$i]->Services = json_decode($row['services']);
-                $ret[$i]->Expired = true;
-                $i++;
+                if ($row['propertyid'] == $property) :
+
+                    $ret[$i] = new Coupon($subscriber);
+                    $ret[$i]->Id = $row['couponid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->Title = $row['title'];
+                    $ret[$i]->Code = $row['code'];
+                    $ret[$i]->Bypercentage = Convert::ToBool($row['bypercentage']);
+                    $ret[$i]->Expires = Convert::ToBool($row['expires']);
+                    $ret[$i]->Used = Convert::ToBool($row['used']);
+                    $ret[$i]->Status = Convert::ToBool($row['status']);
+                    $ret[$i]->Expirydate = Convert::ToBool($row['expirydate']);
+                    $ret[$i]->Value = $row['value'];
+                    $ret[$i]->Usecount = $row['usecount'];
+                    $ret[$i]->Booking = json_decode($row['booking']);
+                    $ret[$i]->Food = json_decode($row['food']);
+                    $ret[$i]->Drinks = json_decode($row['drinks']);
+                    $ret[$i]->Pastries = json_decode($row['pastries']);
+                    $ret[$i]->Laundry = json_decode($row['laundry']);
+                    $ret[$i]->Pool = json_decode($row['pool']);
+                    $ret[$i]->Services = json_decode($row['services']);
+                    $ret[$i]->Expired = true;
+                    $i++;
+
+                endif;
             }
             return $ret;
         }
@@ -387,7 +416,8 @@
         public static function Usedcount(Subscriber $subscriber)
         {
             $db = $subscriber->GetDB();
-            $ret = $db->query("SELECT * FROM coupon WHERE used=1")->num_rows;
+            $property = $_REQUEST['property'];
+            $ret = $db->query("SELECT * FROM coupon WHERE used=1 AND propertyid = '$property'")->num_rows;
             $db->close();
             return $ret;
         }
@@ -401,7 +431,8 @@
         {
             $db = $subscriber->GetDB();
             $tm = time();
-            $ret = $db->query("SELECT * FROM coupon WHERE used=0 AND expires=1 AND expirydate < '$tm'")->num_rows;
+            $property = $_REQUEST['property'];
+            $ret = $db->query("SELECT * FROM coupon WHERE used=0 AND expires=1 AND expirydate < '$tm' AND propertyid = '$property'")->num_rows;
             $db->close();
             return $ret;
         }
@@ -409,7 +440,8 @@
         public static function Countall(Subscriber $subscriber)
         {
             $db = $subscriber->GetDB();
-            $ret = $db->query("SELECT * FROM coupon")->num_rows;
+            $property = $_REQUEST['property'];
+            $ret = $db->query("SELECT * FROM coupon WHERE propertyid = '$property'")->num_rows;
             $db->close();
             return $ret;
         }
@@ -419,7 +451,8 @@
             $db = $subscriber->GetDB();
             $ret = null;
 
-            $res = $db->query("SELECT * FROM coupon WHERE code='$code'");
+            $property = $_REQUEST['property'];
+            $res = $db->query("SELECT * FROM coupon WHERE code='$code' AND propertyid = '$property'");
 
             if($res->num_rows > 0)
             {

@@ -197,7 +197,7 @@
 			return $ret;
 		}
 
-		public function ByUser($customer)
+		public static function ByUser($customer)
         {
             $db = DB::GetDB();
             $ret = array();

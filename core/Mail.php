@@ -24,7 +24,7 @@
 
         public static function Send(Subscriber $subscriber, Mail $email)
         {
-            $request = new Request($subscriber->Domain."/mail");
+            $request = new Request($subscriber->MessagingDomain."/mail");
             $request->AddParameter("userkey", $subscriber->Key);
             $request->AddParameter("intent", "send-mail");
 

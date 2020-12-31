@@ -11,8 +11,7 @@ if(isset($_REQUEST['custsess']))
 
 if($customer->Id != "")
 {
-    $reservation = new Reservation($GLOBALS['subscriber']);
-    $reservation->Initialize($_REQUEST['reservation']);
+    $reservation = new Reservation($_REQUEST['reservation']);
 
     if($reservation->Id != "")
     {

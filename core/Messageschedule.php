@@ -116,6 +116,7 @@
 			$executed = Convert::ToInt($this->Executed);
 			$completed = Convert::ToInt($this->Completed);
 			$schedule = addslashes(is_a($this->Schedule, "Schedule") ? $this->Schedule->Id : $this->Schedule);
+            $propertyid = $_REQUEST['property'];
 
 			$list = array();
 			for($i = 0; $i < count($this->Customlist); $i++)
@@ -126,7 +127,7 @@
 
 			if($res = $db->query("SELECT messagescheduleid FROM messageschedule WHERE messagescheduleid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE messageschedule SET title='$title',message='$message',year='$year',month='$month',day='$day',hour='$hour',minuet='$minuet',guest='$guest',customers='$customers',staff='$staff',subscribers='$subscribers',contactus='$contactus',customlist='$customlist',contactlist='$contactlist',meridian='$meridian',issystem='$issystem',continuous='$continuous',autodelete='$autodelete',execcount='$execcount',executed='$executed',completed='$completed',schedule='$schedule' WHERE messagescheduleid = '$id'");
+				$db->query("UPDATE messageschedule SET title='$title',`message`='$message',`year`='$year',`month`='$month',`day`='$day',hour='$hour',minuet='$minuet',guest='$guest',customers='$customers',staff='$staff',subscribers='$subscribers',contactus='$contactus',customlist='$customlist',contactlist='$contactlist',meridian='$meridian',issystem='$issystem',continuous='$continuous',autodelete='$autodelete',execcount='$execcount',executed='$executed',completed='$completed',schedule='$schedule',propertyid = '$propertyid' WHERE messagescheduleid = '$id'");
 			}
 			else
 			{
@@ -137,7 +138,7 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO messageschedule(messagescheduleid,created,title,message,year,month,day,hour,minuet,guest,customers,staff,subscribers,contactus,customlist,contactlist,meridian,issystem,continuous,autodelete,execcount,executed,completed,schedule) VALUES ('$id','$created','$title','$message','$year','$month','$day','$hour','$minuet','$guest','$customers','$staff','$subscribers','$contactus','$customlist','$contactlist','$meridian','$issystem','$continuous','$autodelete','$execcount','$executed','$completed','$schedule')");
+				$db->query("INSERT INTO messageschedule(messagescheduleid,created,title,`message`,`year`,`month`,`day`,hour,minuet,guest,customers,staff,subscribers,contactus,customlist,contactlist,meridian,issystem,continuous,autodelete,execcount,executed,completed,schedule,propertyid) VALUES ('$id','$created','$title','$message','$year','$month','$day','$hour','$minuet','$guest','$customers','$staff','$subscribers','$contactus','$customlist','$contactlist','$meridian','$issystem','$continuous','$autodelete','$execcount','$executed','$completed','$schedule','$propertyid')");
 			}
 		}
 
@@ -159,39 +160,44 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM messageschedule WHERE title LIKE '%$term%' OR message LIKE '%$term%' OR year LIKE '%$term%' OR month LIKE '%$term%' OR day LIKE '%$term%' OR hour LIKE '%$term%' OR minuet LIKE '%$term%' OR guest LIKE '%$term%' OR customers LIKE '%$term%' OR staff LIKE '%$term%' OR subscribers LIKE '%$term%' OR contactus LIKE '%$term%' OR customlist LIKE '%$term%' OR contactlist LIKE '%$term%' OR meridian LIKE '%$term%' OR issystem LIKE '%$term%' OR continuous LIKE '%$term%' OR autodelete  LIKE '%$term%' OR execcount LIKE '%$term%' OR executed LIKE '%$term%' OR completed LIKE '%$term%' OR schedule LIKE '%$term%'");
+			$res = $db->query("SELECT * FROM messageschedule WHERE title LIKE '%$term%' OR `message` LIKE '%$term%' OR `year` LIKE '%$term%' OR `month` LIKE '%$term%' OR `day` LIKE '%$term%' OR hour LIKE '%$term%' OR minuet LIKE '%$term%' OR guest LIKE '%$term%' OR customers LIKE '%$term%' OR staff LIKE '%$term%' OR subscribers LIKE '%$term%' OR contactus LIKE '%$term%' OR customlist LIKE '%$term%' OR contactlist LIKE '%$term%' OR meridian LIKE '%$term%' OR issystem LIKE '%$term%' OR continuous LIKE '%$term%' OR autodelete  LIKE '%$term%' OR execcount LIKE '%$term%' OR executed LIKE '%$term%' OR completed LIKE '%$term%' OR schedule LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
-                $ret[$i] = new Messageschedule($subscriber);
-                $ret[$i]->Id = $row['messagescheduleid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Title = $row['title'];
-                $ret[$i]->Message = new Messagetemplate($subscriber);
-                $ret[$i]->Message->Initialize($row['message']);
-                $ret[$i]->Year = $row['year'];
-                $ret[$i]->Month = $row['month'];
-                $ret[$i]->Day = $row['day'];
-                $ret[$i]->Hour = $row['hour'];
-                $ret[$i]->Minuet = $row['minuet'];
-                $ret[$i]->Guest = Convert::ToBool($row['guest']);
-                $ret[$i]->Customers = Convert::ToBool($row['customers']);
-                $ret[$i]->Staff = Convert::ToBool($row['staff']);
-                $ret[$i]->Subscribers = Convert::ToBool($row['subscribers']);
-                $ret[$i]->Contactus = Convert::ToBool($row['contactus']);
-                $ret[$i]->Customlist = json_decode($row['customlist']);
-                $ret[$i]->Contactlist = json_decode($row['contactlist']);
-                $ret[$i]->Meridian = $row['meridian'];
-                $ret[$i]->Issystem = Convert::ToBool($row['issystem']);
-                $ret[$i]->Continuous = Convert::ToBool($row['continuous']);
-                $ret[$i]->Autodelete  = Convert::ToBool($row['autodelete']);
-                $ret[$i]->Execcount = $row['execcount'];
-                $ret[$i]->Executed = $row['executed'];
-                $ret[$i]->Completed = Convert::ToBool($row['completed']);
-                $ret[$i]->Schedule = new Schedule($subscriber);
-                $ret[$i]->Schedule->Initialize($row['schedule']);
-				$i++;
+                if ($row['propertyid'] == $propertyid) :
+
+                    $ret[$i] = new Messageschedule($subscriber);
+                    $ret[$i]->Id = $row['messagescheduleid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->Title = $row['title'];
+                    $ret[$i]->Message = new Messagetemplate($subscriber);
+                    $ret[$i]->Message->Initialize($row['message']);
+                    $ret[$i]->Year = $row['year'];
+                    $ret[$i]->Month = $row['month'];
+                    $ret[$i]->Day = $row['day'];
+                    $ret[$i]->Hour = $row['hour'];
+                    $ret[$i]->Minuet = $row['minuet'];
+                    $ret[$i]->Guest = Convert::ToBool($row['guest']);
+                    $ret[$i]->Customers = Convert::ToBool($row['customers']);
+                    $ret[$i]->Staff = Convert::ToBool($row['staff']);
+                    $ret[$i]->Subscribers = Convert::ToBool($row['subscribers']);
+                    $ret[$i]->Contactus = Convert::ToBool($row['contactus']);
+                    $ret[$i]->Customlist = json_decode($row['customlist']);
+                    $ret[$i]->Contactlist = json_decode($row['contactlist']);
+                    $ret[$i]->Meridian = $row['meridian'];
+                    $ret[$i]->Issystem = Convert::ToBool($row['issystem']);
+                    $ret[$i]->Continuous = Convert::ToBool($row['continuous']);
+                    $ret[$i]->Autodelete  = Convert::ToBool($row['autodelete']);
+                    $ret[$i]->Execcount = $row['execcount'];
+                    $ret[$i]->Executed = $row['executed'];
+                    $ret[$i]->Completed = Convert::ToBool($row['completed']);
+                    $ret[$i]->Schedule = new Schedule($subscriber);
+                    $ret[$i]->Schedule->Initialize($row['schedule']);
+                    $i++;
+                
+                endif;
 			}
 			return $ret;
 		}
@@ -200,9 +206,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM messageschedule WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT * FROM messageschedule WHERE ".$field." ='$term' AND propertyid = '$propertyid'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Messageschedule($subscriber);
@@ -241,9 +248,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM messageschedule ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT * FROM messageschedule WHERE propertyid = '$propertyid' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Messageschedule($subscriber);
@@ -282,9 +290,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM messageschedule");
+			$res = $db->query("SELECT * FROM messageschedule WHERE propertyid = '$propertyid'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Messageschedule($subscriber);
@@ -325,8 +334,9 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-            $res = $db->query("SELECT * FROM messageschedule WHERE issystem=1");
+            $res = $db->query("SELECT * FROM messageschedule WHERE issystem=1 AND propertyid = '$propertyid'");
             while(($row = $res->fetch_assoc()) != null)
             {
                 $ret[$i] = new Messageschedule($subscriber);
@@ -366,8 +376,9 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-            $res = $db->query("SELECT * FROM messageschedule WHERE issystem=0");
+            $res = $db->query("SELECT * FROM messageschedule WHERE issystem=0 AND propertyid = '$propertyid'");
             while(($row = $res->fetch_assoc()) != null)
             {
                 $ret[$i] = new Messageschedule($subscriber);
@@ -402,11 +413,11 @@
             return $ret;
         }
 
-
         public static function Completedsystemschedule(Subscriber $subscriber)
         {
             $db = $subscriber->GetDB();
-            $ret = $db->query("SELECT id FROM messageschedule WHERE issystem=0 AND completed=1")->num_rows;
+            $propertyid = $_REQUEST['property'];
+            $ret = $db->query("SELECT id FROM messageschedule WHERE issystem=0 AND completed=1 AND propertyid = '$propertyid'")->num_rows;
             $db->close();
             return $ret;
         }
@@ -414,7 +425,8 @@
         public static function Completeduserchedule(Subscriber $subscriber)
         {
             $db = $subscriber->GetDB();
-            $ret = $db->query("SELECT id FROM messageschedule WHERE issystem=0 AND completed=1")->num_rows;
+            $propertyid = $_REQUEST['property'];
+            $ret = $db->query("SELECT id FROM messageschedule WHERE issystem=0 AND completed=1 AND propertyid = '$propertyid'")->num_rows;
             $db->close();
             return $ret;
         }

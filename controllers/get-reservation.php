@@ -10,7 +10,7 @@ if ($GLOBALS['user']->Id != "")
 
         $ret->data = Reservation::get($property, $_REQUEST['reservation']);
         $ret->status = "success";
-        $ret->message = "Reservation has been deleted";
+        $ret->message = "Reservation fetched successfully";
     }
     else
     {

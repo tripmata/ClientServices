@@ -22,6 +22,7 @@
 		public $Address = "";
 		public $State = "";
 		public $City = "";
+		public $Country = "";
 		public $Facilities = array();
 		public $Gallery = array();
 		public $Checkinm = 0;
@@ -72,6 +73,16 @@
 		public $Rooms = 0;
 		public $Reservations = 0;
 
+
+		// New entry @author Amadi Ifeanyi
+		public $ContactPhone = [];
+		public $ContactEmail = [];
+		public $FacilitiesJson = [];
+		public $PaymentMethods = [];
+		public $ExtraChildFee = 0;
+		public $LateCheckoutRules = [];
+		public $NearbyAttractions = [];
+ 
 		function __construct($arg=null)
 		{
 			if($arg != null)
@@ -100,6 +111,7 @@
 					$this->Address = $row['address'];
 					$this->State = new States($row['state']);
 					$this->City = new City($row['city']);
+					$this->Country = $row['country'];
 					$this->Facilities = json_decode($row['facilities']);
 					$this->Gallery = json_decode($row['gallery']);
 					$this->Checkinm = $row['checkinm'];
@@ -139,9 +151,79 @@
 					$this->Taghandling = Convert::ToInt($row['taghanding']);
 
                     $this->Rooms = Room::RoomCount(new Subscriber($this->Databasename, $this->DatabaseUser, $this->DatabasePassword));
-                    $this->Reservations = Reservation::ReservationCount($this);
+					$this->Reservations = Reservation::ReservationCount($this);
+					
+					$this->fetchNewEntry($row);
 				}
 			}
+		}
+
+		public function fetchNewEntry($row)
+		{
+			$this->ContactPhone 		= $this->getJsonData($row['contact_phone']);
+			$this->ContactEmail 		= $this->getJsonData($row['contact_email']);
+			$this->FacilitiesJson 		= $this->getJsonData($row['facilities_json']);
+			$this->PaymentMethods 		= $this->getJsonData($row['payment_methods']);
+			$this->LateCheckoutRules 	= $this->getJsonData($row['late_checkout_rules']);
+			$this->NearbyAttractions 	= $this->getJsonData($row['nearby_attractions']);
+			$this->ExtraChildFee 		= Convert::ToInt($row['extra_child_fee']);
+		}
+
+		public function setNewEntry() : array
+		{
+			// @var array $data 
+			$data =& $_REQUEST;
+
+			// set data
+			$this->ContactPhone 		= isset($data['contact_phone']) ? addslashes($this->encode($data['contact_phone'])) : addslashes($this->encode($this->ContactPhone));
+			$this->ContactEmail 		= isset($data['contact_email']) ? addslashes($this->encode($data['contact_email'])) : addslashes($this->encode($this->ContactEmail));
+			$this->FacilitiesJson 		= isset($data['facilities_json']) ? addslashes($this->encode($data['facilities_json'])) : addslashes($this->encode($this->FacilitiesJson));
+			$this->PaymentMethods 		= isset($data['payment_methods']) ? addslashes($this->encode($data['payment_methods'])) : addslashes($this->encode($this->PaymentMethods));
+			$this->LateCheckoutRules 	= isset($data['late_checkout_rules']) ? addslashes($this->encode($data['late_checkout_rules'])) : addslashes($this->encode($this->LateCheckoutRules));
+			$this->NearbyAttractions 	= isset($data['nearby_attractions']) ? addslashes($this->encode($data['nearby_attractions'])) : addslashes($this->encode($this->NearbyAttractions));
+			$this->ExtraChildFee 		= isset($data['extra_child_fee']) ? Convert::ToInt($data['extra_child_fee']) : $this->ExtraChildFee;
+
+			// return data
+			return [
+				// for insert sql statement
+				'insert' => [
+					'keys' 	 => ['contact_phone', 'contact_email', 'facilities_json', 'payment_methods', 'late_checkout_rules', 'nearby_attractions', 'extra_child_fee'],
+					'values' => [
+						"'{$this->ContactPhone}'",
+						"'{$this->ContactEmail}'",
+						"'{$this->FacilitiesJson}'",
+						"'{$this->PaymentMethods}'",
+						"'{$this->LateCheckoutRules}'",
+						"'{$this->NearbyAttractions}'",
+						$this->ExtraChildFee,
+					]
+				],
+				// for update sql statement
+				'update' => [
+					"contact_phone = '{$this->ContactPhone}'",
+					"contact_email = '{$this->ContactEmail}'",
+					"facilities_json = '{$this->FacilitiesJson}'",
+					"payment_methods = '{$this->PaymentMethods}'",
+					"late_checkout_rules = '{$this->LateCheckoutRules}'",
+					"nearby_attractions = '{$this->NearbyAttractions}'",
+					"extra_child_fee = {$this->ExtraChildFee}",
+				]
+			];
+		}
+
+		// encode data
+		private function encode($data)
+		{
+			return is_string($data) ? $data : json_encode($data);
+		}
+
+		private function getJsonData($data)
+		{
+			// @var object|null $json
+			$json = is_string($data) ? json_decode($data) : [];
+
+			// are we good?
+			return $json;
 		}
 
 		public function Save()
@@ -162,6 +244,7 @@
 			$formtype = addslashes($this->Formtype);
 			$description = addslashes($this->Description);
 			$address = addslashes($this->Address);
+			$country = addslashes($this->Country);
 			$state = addslashes(is_a($this->State, "States") ? $this->State->Id : $this->State);
 			$city = addslashes(is_a($this->City, "City") ? $this->City->Id : $this->City);
 			$facilities = addslashes(json_encode($this->Facilities));
@@ -196,7 +279,6 @@
 			$databaseuser = addslashes($this->DatabaseUser);
 
 			$meta = addslashes($this->Meta);
-
 			$star = Convert::ToInt($this->Star);
 
 			$r = [];
@@ -213,10 +295,16 @@
 			$taghandling = Convert::ToInt($this->Taghandling);
 			$onlinepay = Convert::ToInt($this->Onlinepay);
 
+			// set new entry
+			$entry = (object)($this->setNewEntry());
 
 			if($res = $db->query("SELECT propertyid FROM property WHERE propertyid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE property SET type='$type',name='$name',statename='$statename',cityname='$cityname',phone1='$phone1',phone2='$phone2',email1='$email1',email2='$email2',banner='$banner',formtype='$formtype',description='$description',address='$address',state='$state',city='$city',facilities='$facilities',gallery='$gallery',checkinm='$checkinm',checkinh='$checkinh',checkoutmin='$checkoutmin',checkouth='$checkouth',canceldays='$canceldays',cancelhours='$cancelhours',rating='$rating',vies='$vies',cashonly='$cashonly',cancellation='$cancellation',damagedeposit='$damagedeposit',earlycheckout='$earlycheckout',partialpayment='$partialpayment',partialpaypercentage='$partialpaypercentage',status='$status',approved='$approved',suspended='$suspended',recomended='$recomended',damagedepositamount='$damagedepositamount',partialpayamount='$partialpayamount',owner='$owner',hms='$hms',rules='$rules',tandc='$tandc',childpolicy='$childpolicy',databasename='$databasename',databasepassword='$databasepassword',databaseuser='$databaseuser',meta='$meta',star='$star',taghanding='$taghandling',selfcheckin='$selfcheckin',onlinepay='$onlinepay' WHERE propertyid = '$id'");
+				// get new entry update statement
+				$entryUpdate = ',' . implode(',', $entry->update);
+
+				// make query
+				$db->query("UPDATE property SET `type`='$type',`name`='$name',statename='$statename',cityname='$cityname',phone1='$phone1',phone2='$phone2',email1='$email1',email2='$email2',banner='$banner',formtype='$formtype',`description`='$description',`address`='$address',`state`='$state',city='$city',facilities='$facilities',gallery='$gallery',checkinm='$checkinm',checkinh='$checkinh',checkoutmin='$checkoutmin',checkouth='$checkouth',canceldays='$canceldays',cancelhours='$cancelhours',rating='$rating',vies='$vies',cashonly='$cashonly',cancellation='$cancellation',damagedeposit='$damagedeposit',earlycheckout='$earlycheckout',partialpayment='$partialpayment',partialpaypercentage='$partialpaypercentage',`status`='$status',approved='$approved',suspended='$suspended',recomended='$recomended',damagedepositamount='$damagedepositamount',partialpayamount='$partialpayamount',`owner`='$owner',hms='$hms',rules='$rules',tandc='$tandc',childpolicy='$childpolicy',databasename='$databasename',databasepassword='$databasepassword',databaseuser='$databaseuser',meta='$meta',star='$star',taghanding='$taghandling',selfcheckin='$selfcheckin',onlinepay='$onlinepay',country='$country' {$entryUpdate} WHERE propertyid = '$id'");
 			}
 			else
 			{
@@ -227,7 +315,15 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO property(propertyid,created,type,name,statename,cityname,phone1,phone2,email1,email2,banner,formtype,description,address,state,city,facilities,gallery,checkinm,checkinh,checkoutmin,checkouth,canceldays,cancelhours,rating,vies,cashonly,cancellation,damagedeposit,earlycheckout,partialpayment,partialpaypercentage,status,approved,suspended,recomended,damagedepositamount,partialpayamount,owner,hms,rules,tandc,childpolicy,databasename,databasepassword,databaseuser,meta,star,taghanding,selfcheckin,onlinepay) VALUES ('$id','$created','$type','$name','$statename','$cityname','$phone1','$phone2','$email1','$email2','$banner','$formtype','$description','$address','$state','$city','$facilities','$gallery','$checkinm','$checkinh','$checkoutmin','$checkouth','$canceldays','$cancelhours','$rating','$vies','$cashonly','$cancellation','$damagedeposit','$earlycheckout','$partialpayment','$partialpaypercentage','$status','$approved','$suspended','$recomended','$damagedepositamount','$partialpayamount','$owner','$hms','$rules','$tandc','$childpolicy','$databasename','$databasepassword','$databaseuser','$meta','$star','$taghandling','$selfcheckin','$onlinepay')");
+
+				// get entry keys
+				$entryKeys = implode(',', $entry->insert['keys']);
+
+				// get entry values
+				$entryValues = implode(',', $entry->insert['values']);
+
+				// make query
+				$db->query("INSERT INTO property(propertyid,created,`type`,`name`,statename,cityname,phone1,phone2,email1,email2,banner,formtype,`description`,`address`,`state`,city,facilities,gallery,checkinm,checkinh,checkoutmin,checkouth,canceldays,cancelhours,rating,vies,cashonly,cancellation,damagedeposit,earlycheckout,partialpayment,partialpaypercentage,`status`,approved,suspended,recomended,damagedepositamount,partialpayamount,`owner`,hms,rules,tandc,childpolicy,databasename,databasepassword,databaseuser,meta,star,taghanding,selfcheckin,onlinepay,country,{$entryKeys}) VALUES ('$id','$created','$type','$name','$statename','$cityname','$phone1','$phone2','$email1','$email2','$banner','$formtype','$description','$address','$state','$city','$facilities','$gallery','$checkinm','$checkinh','$checkoutmin','$checkouth','$canceldays','$cancelhours','$rating','$vies','$cashonly','$cancellation','$damagedeposit','$earlycheckout','$partialpayment','$partialpaypercentage','$status','$approved','$suspended','$recomended','$damagedepositamount','$partialpayamount','$owner','$hms','$rules','$tandc','$childpolicy','$databasename','$databasepassword','$databaseuser','$meta','$star','$taghandling','$selfcheckin','$onlinepay','$country',{$entryValues})");
 			}
 		}
 
@@ -312,7 +408,9 @@
                 $ret[$i]->Taghandling = Convert::ToInt($row['taghanding']);
 
                 $ret[$i]->Rooms = Room::RoomCount(new Subscriber($ret[$i]->Databasename, $ret[$i]->DatabaseUser, $ret[$i]->DatabasePassword));
-                $ret[$i]->Reservations = Reservation::ReservationCount($ret[$i]);
+				$ret[$i]->Reservations = Reservation::ReservationCount($ret[$i]);
+				
+				$ret[$i]->fetchNewEntry($row);
 				$i++;
 			}
 			return $ret;
@@ -412,7 +510,10 @@
                 $ret[$i]->Taghandling = Convert::ToInt($row['taghanding']);
 
                 $ret[$i]->Rooms = Room::RoomCount(new Subscriber($ret[$i]->Databasename, $ret[$i]->DatabaseUser, $ret[$i]->DatabasePassword));
-                $ret[$i]->Reservations = Reservation::ReservationCount($ret[$i]);
+				$ret[$i]->Reservations = Reservation::ReservationCount($ret[$i]);
+				
+				$ret[$i]->fetchNewEntry($row);
+
 				$i++;
 			}
 			return $ret;
@@ -484,8 +585,11 @@
                 $ret[$i]->Onlinepay = Convert::ToBool($row['onlinepay']);
                 $ret[$i]->Taghandling = Convert::ToInt($row['taghanding']);
 
-                $ret[$i]->Rooms = Room::RoomCount(new Subscriber($ret[$i]->Databasename, $ret[$i]->DatabaseUser, $ret[$i]->DatabasePassword));
-                $ret[$i]->Reservations = Reservation::ReservationCount($ret[$i]);
+                $ret[$i]->Rooms = Room::RoomCount(new Subscriber(), $row['propertyid']);
+				$ret[$i]->Reservations = Reservation::ReservationCount($ret[$i]);
+				
+				$ret[$i]->fetchNewEntry($row);
+
                 $i++;
             }
             return $ret;
@@ -607,5 +711,18 @@
 			{
 				$this->Price = $rooms[0]->Price;
 			}
+		}
+
+		// check if property can cancel reservations
+		public static function Cancelable(string $propertyId) : bool 
+		{
+			// get db instance
+			$db = DB::GetDB();
+
+			// Check property table
+			$property = $db->query("SELECT * FROM property WHERE propertyid = '$propertyId' AND cancellation = 1");
+
+			// are we good ??
+			return $property->num_rows > 0 ? true : false;
 		}
 	}

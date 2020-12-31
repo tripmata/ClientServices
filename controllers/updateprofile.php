@@ -1,16 +1,11 @@
 <?php
 
 	$ret = new stdClass();
-
-	echo json_encode($_REQUEST['token']);
-	die();
-
-
     $customer = new Customer($GLOBALS['subscriber']);
 
-    if(isset($_REQUEST['custsess']))
+    if(Customer::isLoggedIn($customerId))
     {
-        $customer->Initialize($_REQUEST['custsess']);
+        $customer->Initialize($customerId);
     }
 
     if($customer->Id != "")
@@ -30,10 +25,19 @@
             $customer->Dateofbirth = $d;
             $customer->Monthofbirth = $d->Month;
             $customer->Dayofbirth = $d->Day;
+            $customer->DOB = $_REQUEST['dob'];
         }
         if($_REQUEST['state'] != "")
         {
             $customer->State = $_REQUEST['state'];
+        }
+        if($_REQUEST['city'] != "")
+        {
+            $customer->City = $_REQUEST['city'];
+        }
+        if($_REQUEST['sex'] != "")
+        {
+            $customer->Sex = $_REQUEST['sex'];
         }
         if($_REQUEST['country'] != "")
         {
@@ -42,6 +46,7 @@
         if($_REQUEST['street'] != "")
         {
             $customer->Street = $_REQUEST['street'];
+            $customer->Address = $_REQUEST['street'];
         }
         if($_REQUEST['occupation'] != "")
         {
@@ -60,9 +65,9 @@
         $ret->status = "success";
         $ret->message = "Profile saved successfully";
 
-        $context = Context::Create($customer);
-        $event = new Event($GLOBALS['subscriber'], Event::CustomerUpdatesInfo, $context);
-        Event::Fire($event);
+        // $context = Context::Create($customer);
+        // $event = new Event($GLOBALS['subscriber'], Event::CustomerUpdatesInfo, $context);
+        // Event::Fire($event);
     }
     else
     {

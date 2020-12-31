@@ -34,10 +34,10 @@ class Configuration
 
             // live connection settings
             'live' => [
-                'host' => '',
-                'user' => '',
-                'pass' => '',
-                'name' => '',
+                'host' => 'localhost',
+                'user' => 'tripmata_user',
+                'pass' => 'p@$$word@2020',
+                'name' => 'tripmata_database',
             ]
         ];
 
@@ -59,11 +59,13 @@ class Configuration
             // development url configuration
             'development' => [
                 'host'      => 'http://localhost:8888/tripmata/',
+                'messaging' => 'http://localhost:8888/tripmata-suites/Messaging'
             ],
 
             // live url configuration
             'live' => [
-                'host'      => ''
+                'host'      => 'http://tripmata.net/',
+                'messaging' => 'http://services.tripmata.net/Messaging'
             ]
         ];
 
@@ -80,8 +82,14 @@ class Configuration
      */
     private static function getObject(array $config) : object 
     {
+        // get mode
+        $mode = Configuration::MODE;
+
+        // read http_host
+        if (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'localhost:') === false) $mode = 'live';
+
         // return configuration as an object
-        return (object) (isset($config[Configuration::MODE]) ? $config[Configuration::MODE] : $config['development']);
+        return (object) (isset($config[$mode]) ? $config[$mode] : $config['development']);
     }
 
     /**
@@ -113,6 +121,9 @@ class Configuration
 
                     // check for host
                     $currentConfig['host'] = isset($jsonData->host) ? $jsonData->host : $currentConfig['host'];
+
+                    // check for messaging
+                    $currentConfig['messaging'] = isset($jsonData->messaging) ? $jsonData->messaging : $currentConfig['messaging'];
 
                     // set now
                     $config[Configuration::MODE] = $currentConfig;

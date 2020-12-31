@@ -4,7 +4,7 @@
     class Subscriber
     {
 		public $isValid = false;
-        public $Key;
+        public $Key = "";
         public $Id = "";
         public $Name = "";
         public $Surname = "";
@@ -38,6 +38,7 @@
         public $Email2 = "";
         public $State = "";
         public $City = "";
+        public $MessagingDomain = '';
 
 		
 		public $Attendancemethod = "fingerprint";
@@ -61,6 +62,9 @@
             // $this->DatabaseName = $databaseName;
             // $this->DataBaseUser = $databaseUser;
             // $this->DataBasepassword = $databasepassword;
+
+            $this->MessagingDomain = Configuration::url()->messaging;
+            $this->Key = '9050dsvdadsvebsrhfhsdgadysry';
         }
 
 

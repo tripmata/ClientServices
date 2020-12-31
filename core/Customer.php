@@ -40,6 +40,8 @@
 		public $Destination = "";
 		public $Origination = "";
 		public $Guest = "";
+		public $Address = "";
+		public $DOB = "";
 
 		public $hasProperty = false;
 		public $hasVehicle = false;
@@ -47,7 +49,8 @@
 
 		public $Bank = "";
 		public $Accountname = "";
-		public $Accountnumber = "";
+        public $Accountnumber = "";
+        public $InternalEmail = "";
 
 		public $hasCorperate = false;
 
@@ -55,13 +58,15 @@
 		
 		private $subscriber = null;
 
-		public $isLodged = false;
+        public $isLodged = false;
+        public $isActivated = false;
 
 		public $Wallet = 0.0;
 		public $Subscription = "";
 		public $Corporate = false;
 		public $Corporaterequest = false;
-		public $Corporateresponse = false;
+        public $Corporateresponse = false;
+        public $Activity = [];
 
 		function __construct($subscriber)
 		{
@@ -90,8 +95,8 @@
 
                     $this->Id = $row['customerid'];
                     $this->Created = new WixDate($row['created']);
-                    $this->Name = $row['name'];
-                    $this->Surname = $row['surname'];
+                    $this->Name = ucfirst($row['name']);
+                    $this->Surname = ucfirst($row['surname']);
                     $this->Phone = $row['phone'];
                     $this->Email = $row['email'];
                     $this->Password = $row['password'];
@@ -122,6 +127,9 @@
                     $this->Destination = $row['destination'];
                     $this->Origination = $row['origination'];
                     $this->Guest = $row['guest'];
+                    $this->Address = $row['address'];
+                    $this->DOB = $row['dob'];
+                    $this->InternalEmail = $row['internalEmail'];
 
                     $this->Bank = $row['bank'];
                     $this->Accountname = $row['accountname'];
@@ -134,6 +142,10 @@
                     $this->Corporateresponse = Convert::ToBool($row['corporate_response']);
 
                     $this->CustomerDetails();
+                    $this->CustomerActivities();
+
+                    // has customer created a password
+                    if ($row['password'] != '') $this->isActivated = true;
                 }
             }
         }
@@ -176,6 +188,9 @@
 			$destination = addslashes($this->Destination);
 			$origination = addslashes($this->Origination);
 			$guest = addslashes(is_a($this->Guest, "Guest") ? $this->Guest->Id : $this->Guest);
+			$address = addslashes($this->Address);
+			$dob = addslashes($this->DOB);
+
 
 			$bank = addslashes($this->Bank);
 			$accountname = addslashes($this->Accountname);
@@ -186,10 +201,11 @@
             $subscription = Convert::ToInt($this->Subscription);
             $copRequest = Convert::ToInt($this->Corporaterequest);
             $copResponse = Convert::ToInt($this->Corporateresponse);
+            $internalEmail = substr($this->Id, 0, 5) . '@tripmata.com';
 
 			if($res = $db->query("SELECT customerid FROM customer WHERE customerid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE customer SET name='$name',surname='$surname',phone='$phone',email='$email',password='$password',country='$country',state='$state',city='$city',occupation='$occupation',kinname='$kinname',kinsurname='$kinsurname',organization='$organization',zip='$zip',lastseen='$lastseen',dateofbirth='$dateofbirth',monthofbirth='$monthofbirth',dayofbirth='$dayofbirth',newsletter='$newsletter',active='$active',status='$status',sex='$sex',guestid='$guestid',salutation='$salutation',profilepic='$profilepic',idtype='$idtype',idnumber='$idnumber',idimage='$idimage',street='$street',kinaddress='$kinaddress',destination='$destination',origination='$origination',guest='$guest',bank='$bank',accountname='$accountname',accountnumber='$accountnumber',wallet='$wallet',subscription='$subscription',corporate='$corporate',corporate_request='$copRequest',corporate_response='$copResponse' WHERE customerid = '$id'");
+				$db->query("UPDATE customer SET `name`='$name',surname='$surname',phone='$phone',email='$email',`password`='$password',country='$country',`state`='$state',city='$city',occupation='$occupation',kinname='$kinname',kinsurname='$kinsurname',organization='$organization',zip='$zip',lastseen='$lastseen',dateofbirth='$dateofbirth',monthofbirth='$monthofbirth',dayofbirth='$dayofbirth',newsletter='$newsletter',active='$active',status='$status',sex='$sex',guestid='$guestid',salutation='$salutation',profilepic='$profilepic',idtype='$idtype',idnumber='$idnumber',idimage='$idimage',street='$street',kinaddress='$kinaddress',destination='$destination',origination='$origination',guest='$guest',bank='$bank',accountname='$accountname',accountnumber='$accountnumber',wallet='$wallet',subscription='$subscription',corporate='$corporate',corporate_request='$copRequest',corporate_response='$copResponse',`address`='$address',dob='$dob',internalEmail='$internalEmail' WHERE customerid = '$id'");
 			}
 			else
 			{
@@ -199,8 +215,9 @@
 				{
 					goto redo;
 				}
-				$this->Id = $id;
-				$db->query("INSERT INTO customer(customerid,created,name,surname,phone,email,password,country,state,city,occupation,kinname,kinsurname,organization,zip,lastseen,dateofbirth,monthofbirth,dayofbirth,newsletter,active,status,sex,guestid,salutation,profilepic,idtype,idnumber,idimage,street,kinaddress,destination,origination,guest,bank,accountname,accountnumber,wallet,subscription,corporate,corporate_request,corporate_response) VALUES ('$id','$created','$name','$surname','$phone','$email','$password','$country','$state','$city','$occupation','$kinname','$kinsurname','$organization','$zip','$lastseen','$dateofbirth','$monthofbirth','$dayofbirth','$newsletter','$active','$status','$sex','$guestid','$salutation','$profilepic','$idtype','$idnumber','$idimage','$street','$kinaddress','$destination','$origination','$guest','$bank','$accountname','$accountnumber','$wallet','$subscription','$corporate','$copRequest','$copResponse')");
+                $this->Id = $id;
+                $internalEmail = substr($this->Id, 0, 5) . '@tripmata.com';
+				$db->query("INSERT INTO customer(customerid,created,`name`,surname,phone,email,`password`,country,`state`,city,occupation,kinname,kinsurname,organization,zip,lastseen,dateofbirth,monthofbirth,dayofbirth,newsletter,active,`status`,sex,guestid,salutation,profilepic,idtype,idnumber,idimage,street,kinaddress,destination,origination,guest,bank,accountname,accountnumber,wallet,subscription,corporate,corporate_request,corporate_response,`address`,dob,internalEmail) VALUES ('$id','$created','$name','$surname','$phone','$email','$password','$country','$state','$city','$occupation','$kinname','$kinsurname','$organization','$zip','$lastseen','$dateofbirth','$monthofbirth','$dayofbirth','$newsletter','$active','$status','$sex','$guestid','$salutation','$profilepic','$idtype','$idnumber','$idimage','$street','$kinaddress','$destination','$origination','$guest','$bank','$accountname','$accountnumber','$wallet','$subscription','$corporate','$copRequest','$copResponse','$address','$dob','$internalEmail')");
 			}
 		}
 
@@ -216,22 +233,27 @@
 			$guest = $this->GetGuest();
 			$guest->Delete();
 			*/
-		}
+        }
+        
+        public function hasPassword() : bool
+        {
+            return ($this->Password == '') ? false : true;
+        }
 
 		public static function Search(Subscriber $subscriber, $term='')
 		{
             $db = DB::GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
 
-			$res = $db->query("SELECT * FROM customer WHERE name LIKE '%$term%' OR surname LIKE '%$term%' OR phone LIKE '%$term%' OR email LIKE '%$term%' OR password LIKE '%$term%' OR country LIKE '%$term%' OR state LIKE '%$term%' OR city LIKE '%$term%' OR occupation LIKE '%$term%' OR kinname LIKE '%$term%' OR kinsurname LIKE '%$term%' OR organization LIKE '%$term%' OR zip LIKE '%$term%' OR lastseen LIKE '%$term%' OR dateofbirth LIKE '%$term%' OR monthofbirth LIKE '%$term%' OR dayofbirth LIKE '%$term%' OR newsletter LIKE '%$term%' OR active LIKE '%$term%' OR status LIKE '%$term%' OR sex LIKE '%$term%' OR guestid LIKE '%$term%' OR salutation LIKE '%$term%' OR profilepic LIKE '%$term%' OR idtype LIKE '%$term%' OR idnumber LIKE '%$term%' OR idimage LIKE '%$term%' OR street LIKE '%$term%' OR kinaddress LIKE '%$term%' OR destination LIKE '%$term%' OR origination LIKE '%$term%' OR guest LIKE '%$term%'");
+			$res = $db->query("SELECT * FROM customer WHERE `name` LIKE '%$term%' OR surname LIKE '%$term%' OR phone LIKE '%$term%' OR email LIKE '%$term%' OR `password` LIKE '%$term%' OR country LIKE '%$term%' OR `state` LIKE '%$term%' OR city LIKE '%$term%' OR occupation LIKE '%$term%' OR kinname LIKE '%$term%' OR kinsurname LIKE '%$term%' OR organization LIKE '%$term%' OR zip LIKE '%$term%' OR lastseen LIKE '%$term%' OR dateofbirth LIKE '%$term%' OR monthofbirth LIKE '%$term%' OR dayofbirth LIKE '%$term%' OR newsletter LIKE '%$term%' OR active LIKE '%$term%' OR `status` LIKE '%$term%' OR sex LIKE '%$term%' OR guestid LIKE '%$term%' OR salutation LIKE '%$term%' OR profilepic LIKE '%$term%' OR idtype LIKE '%$term%' OR idnumber LIKE '%$term%' OR idimage LIKE '%$term%' OR street LIKE '%$term%' OR kinaddress LIKE '%$term%' OR destination LIKE '%$term%' OR origination LIKE '%$term%' OR guest LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Customer($subscriber);
                 $ret[$i]->Id = $row['customerid'];
                 $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Name = $row['name'];
-                $ret[$i]->Surname = $row['surname'];
+                $ret[$i]->Name = ucfirst($row['name']);
+                $ret[$i]->Surname = ucfirst($row['surname']);
                 $ret[$i]->Phone = $row['phone'];
                 $ret[$i]->Email = $row['email'];
                 $ret[$i]->Password = $row['password'];
@@ -262,6 +284,9 @@
                 $ret[$i]->Destination = $row['destination'];
                 $ret[$i]->Origination = $row['origination'];
                 $ret[$i]->Guest = $row['guest'];
+                $ret[$i]->Address = $row['address'];
+                $ret[$i]->DOB = $row['dob'];
+                $ret[$i]->InternalEmail = $row['internalEmail'];
 
                 $ret[$i]->Bank = $row['bank'];
                 $ret[$i]->Accountname = $row['accountname'];
@@ -274,6 +299,7 @@
                 $ret[$i]->Corporateresponse = Convert::ToBool($row['corporate_response']);
 
                 $i++;
+
 			}
 			return $ret;
 		}
@@ -322,6 +348,9 @@
                 $ret[$i]->Destination = $row['destination'];
                 $ret[$i]->Origination = $row['origination'];
                 $ret[$i]->Guest = $row['guest'];
+                $ret[$i]->Address = $row['address'];
+                $ret[$i]->DOB = $row['dob'];
+                $ret[$i]->InternalEmail = $row['internalEmail'];
 
                 $ret[$i]->Bank = $row['bank'];
                 $ret[$i]->Accountname = $row['accountname'];
@@ -382,10 +411,13 @@
                 $ret[$i]->Destination = $row['destination'];
                 $ret[$i]->Origination = $row['origination'];
                 $ret[$i]->Guest = $row['guest'];
+                $ret[$i]->Address = $row['address'];
+                $ret[$i]->DOB = $row['dob'];
 
                 $ret[$i]->Bank = $row['bank'];
                 $ret[$i]->Accountname = $row['accountname'];
                 $ret[$i]->Accountnumber = $row['accountnumber'];
+                $ret[$i]->InternalEmail = $row['internalEmail'];
 
                 $ret[$i]->Corporate = Convert::ToBool($row['corporate']);
                 $ret[$i]->Wallet = doubleval($row['wallet']);
@@ -402,7 +434,7 @@
 		{
             $db = DB::GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
 
 			$res = $db->query("SELECT * FROM customer");
 			while(($row = $res->fetch_assoc()) != null)
@@ -410,8 +442,8 @@
 				$ret[$i] = new Customer($subscriber);
 				$ret[$i]->Id = $row['customerid'];
 				$ret[$i]->Created = new WixDate($row['created']);
-				$ret[$i]->Name = $row['name'];
-				$ret[$i]->Surname = $row['surname'];
+				$ret[$i]->Name = ucfirst($row['name']);
+				$ret[$i]->Surname = ucfirst($row['surname']);
 				$ret[$i]->Phone = $row['phone'];
 				$ret[$i]->Email = $row['email'];
 				$ret[$i]->Password = $row['password'];
@@ -441,7 +473,10 @@
 				$ret[$i]->Kinaddress = $row['kinaddress'];
 				$ret[$i]->Destination = $row['destination'];
 				$ret[$i]->Origination = $row['origination'];
-				$ret[$i]->Guest = $row['guest'];
+                $ret[$i]->Guest = $row['guest'];
+                $ret[$i]->Address = $row['address'];
+                $ret[$i]->DOB = $row['dob'];
+                $ret[$i]->InternalEmail = $row['internalEmail'];
 
                 $ret[$i]->Bank = $row['bank'];
                 $ret[$i]->Accountname = $row['accountname'];
@@ -478,8 +513,6 @@
 			$this->Guest = is_a($guest, "Guest") ? $guest->Id : $guest;
 		}
 
-
-
         //Hand crafted
         public static function EmailExist($email, Subscriber $sub)
         {
@@ -500,9 +533,41 @@
             return $db->query("SELECT guestid FROM customer WHERE guestid='$guestid'")->num_rows > 0 ? true : false;
         }
 
-        public static function isLoggedin()
+        public static function isLoggedin(&$customerId = null)
         {
-            return false;
+            // @var bool $loggedIn
+            $loggedIn = false;
+
+            // @var string $token
+            $token = isset($_REQUEST['token']) ? $_REQUEST['token'] : (isset($_REQUEST['custsess']) ? $_REQUEST['custsess'] : null);
+
+            // check 
+            if ($token != null) :
+
+                // get db
+                $db = DB::Query("SELECT user, span FROM `session` WHERE token = '{$token}'");
+
+                // are we good ?
+                if ($db->num_rows > 0) :
+
+                    // fetch data
+                    $row = $db->fetch_assoc();
+
+                    // set id
+                    $customerId = $row['user'];
+
+                    // check span
+                    // not implemented well
+
+                    // all good
+                    $loggedIn = true;
+
+                endif;
+
+            endif;
+
+            // return bool
+            return $loggedIn;
         }
 
         public function SetPassword($password)
@@ -539,7 +604,45 @@
 
             $db = DB::GetDB();
 
-            $this->hasProperty = $db->query("SELECT id FROM property WHERE owner='$id'")->num_rows > 0 ? true : false;
-            $this->hasVehicle = $db->query("SELECT id FROM vehicle WHERE owner='$id'")->num_rows > 0 ? true : false;
+            $this->hasProperty = $db->query("SELECT id FROM property WHERE `owner`='$id'")->num_rows > 0 ? true : false;
+            $this->hasVehicle = $db->query("SELECT id FROM vehicle WHERE `owner`='$id'")->num_rows > 0 ? true : false;
+        }
+
+        public function CustomerActivities()
+        {
+            if (isset($_REQUEST['property']))
+            {
+                // load database 
+                $db = DB::GetDB();
+
+                // try get customers 
+                /**
+                 * 1. reservations
+                 * 2. lodging
+                 * 3. no show's
+                 * 4. reviews
+                 */
+
+                // get the customer id
+                $customerId = $this->Id;
+
+                // get the property id
+                $property = $_REQUEST['property'];
+
+                // create object
+                $this->Activity = new stdClass();
+
+                // get reservations for this property
+                $this->Activity->Reservations = $db->query("SELECT * FROM reservation WHERE customer = '$customerId' AND property = '$property'")->num_rows;
+
+                // get lodging for this property
+                $this->Activity->Lodging = $db->query("SELECT * FROM lodging WHERE guest = '$customerId' AND propertyid = '$property'")->num_rows;
+
+                // get reviews for this property
+                $this->Activity->Reviews = $db->query("SELECT * FROM reviews WHERE customer = '$customerId' AND property = '$property'")->num_rows;
+
+                // get no show for this property
+                $this->Activity->NoShow = $db->query("SELECT * FROM reservation WHERE customer = '$customerId' AND property = '$property' AND noshow = 1")->num_rows;
+            }
         }
 	}

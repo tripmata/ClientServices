@@ -18,7 +18,7 @@ if ($GLOBALS['user']->Id != "")
             {
                 if ($contacts[$i] == "customers")
                 {
-                    $list = Customer::All($GLOBALS['subscriber']);
+                    $list = CustomerByProperty::All($GLOBALS['subscriber']);
 
                     for ($j = 0; $j < count($list); $j++)
                     {
@@ -27,8 +27,9 @@ if ($GLOBALS['user']->Id != "")
                         $con->name = $list[$j]->Name;
                         $con->surname = $list[$j]->Surname;
                         $con->phone = $list[$j]->Phone;
-                        $con->email = $list[$j]->Email;
+                        $con->email = $list[$j]->InternalEmail;
                         $con->type = $list[$j]->Type;
+                        $con->messageType = 'internal';
 
                         array_push($ret->data, $con);
                     }
@@ -46,14 +47,16 @@ if ($GLOBALS['user']->Id != "")
                         $con->surname = $list[$j]->Surname;
                         $con->phone = $list[$j]->Phone;
                         $con->email = $list[$j]->Email;
-                        $con->type = $list[$j]->Type;
+                        $con->type = $list[$j]->Type; 
+                        $con->messageType = 'external';
 
                         array_push($ret->data, $con);
                     }
                 }
+
                 if($contacts[$i] == "guests")
                 {
-                    $list = Guest::All($GLOBALS['subscriber']);
+                    $list = CustomerByProperty::All($GLOBALS['subscriber']);
 
                     for($j = 0; $j < count($list); $j++)
                     {
@@ -62,26 +65,14 @@ if ($GLOBALS['user']->Id != "")
                         $con->name = $list[$j]->Name;
                         $con->surname = $list[$j]->Surname;
                         $con->phone = $list[$j]->Phone;
-                        $con->email = $list[$j]->Email;
+                        $con->email = $list[$j]->InternalEmail;
                         $con->type = $list[$j]->Type;
-
-                        array_push($ret->data, $con);
-                    }
-
-                    $list = Subguest::All($GLOBALS['subscriber']);
-                    for($j = 0; $j < count($list); $j++)
-                    {
-                        $con = new stdClass();
-                        $con->id = $list[$j]->Id;
-                        $con->name = $list[$j]->Name;
-                        $con->surname = $list[$j]->Surname;
-                        $con->phone = $list[$j]->Phone;
-                        $con->email = $list[$j]->Email;
-                        $con->type = $list[$j]->Type;
+                        $con->messageType = 'internal';
 
                         array_push($ret->data, $con);
                     }
                 }
+                
                 if($contacts[$i] == "subscribers")
                 {
                     $list = Contact::All($GLOBALS['subscriber']);
@@ -95,10 +86,12 @@ if ($GLOBALS['user']->Id != "")
                         $con->phone = $list[$j]->Phone;
                         $con->email = $list[$j]->Email;
                         $con->type = $list[$j]->Type;
+                        $con->messageType = 'external';
 
                         array_push($ret->data, $con);
                     }
                 }
+
                 if($contacts[$i] == "contactus")
                 {
                     $list = Message::All($GLOBALS['subscriber']);
@@ -112,14 +105,40 @@ if ($GLOBALS['user']->Id != "")
                         $con->phone = $list[$j]->Phone;
                         $con->email = $list[$j]->Email;
                         $con->type = $list[$j]->Type;
+                        $con->messageType = 'external';
 
                         array_push($ret->data, $con);
                     }
                 }
 
+                if($contacts[$i] == "in-house-guest")
+                {
+                    $list = Lodging::All($GLOBALS['subscriber'], true);
+
+                    for($j = 0; $j < count($list); $j++)
+                    {
+                        if (count($list[$j]->Checkouts) == 0) :
+
+                            $con = new stdClass();
+                            $customer = $list[$j]->Guest;
+                            $con->id = $customer->Id;
+                            $con->name = $customer->Name;
+                            $con->surname = $customer->Surname;
+                            $con->phone = $customer->Phone;
+                            $con->email = $customer->InternalEmail;
+                            $con->type = $customer->Type;
+                            $con->messageType = 'internal';
+
+                            array_push($ret->data, $con);
+
+                        endif;
+                    }
+                }
+
                 if(($contacts[$i] != "customers") && ($contacts[$i] != "staff") &&
                     ($contacts[$i] != "guests") && ($contacts[$i] != "subscribers") &&
-                    ($contacts[$i] != "contactus"))
+                    ($contacts[$i] != "contactus") &&
+                    ($contacts[$i] != "in-house-guest"))
                 {
                     $c = new Contactcollection($GLOBALS['subscriber']);
                     $c->Initialize($contacts[$i]);
@@ -128,16 +147,21 @@ if ($GLOBALS['user']->Id != "")
 
                     for($j = 0; $j < count($list); $j++)
                     {
-                        $con = new stdClass();
-                        $con->id = $list[$j]->Id;
-                        $con->name = $list[$j]->Type != "supplier" ?  $list[$j]->Name :
-                            ($list[$j]->Company == "" ? $list[$j]->Contactperson : $list[$j]->Company);
-                        $con->surname = $list[$j]->Type != "supplier" ?  $list[$j]->Surname : "";
-                        $con->phone = $list[$j]->Phone;
-                        $con->email = $list[$j]->Email;
-                        $con->type = $list[$j]->Type;
+                        if (isset($list[$j])) :
 
-                        array_push($ret->data, $con);
+                            $con = new stdClass();
+                            $con->id = $list[$j]->Id;
+                            $con->name = $list[$j]->Type != "supplier" ?  $list[$j]->Name :
+                                ($list[$j]->Company == "" ? $list[$j]->Contactperson : $list[$j]->Company);
+                            $con->surname = $list[$j]->Type != "supplier" ?  $list[$j]->Surname : "";
+                            $con->phone = $list[$j]->Phone;
+                            $con->email = $list[$j]->Email;
+                            $con->type = $list[$j]->Type;
+                            $con->messageType = 'external';
+
+                            array_push($ret->data, $con);
+
+                        endif;
                     }
                 }
             }

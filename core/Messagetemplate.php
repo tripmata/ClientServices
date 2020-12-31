@@ -3,7 +3,6 @@
 	// Jan, 10/2020
 	// Building class for Messagetemplate
 	*/
-
 	class Messagetemplate
 	{
 		public $Id = "";
@@ -73,11 +72,12 @@
 			$status = Convert::ToInt($this->Status);
 			$type = addslashes($this->Type);
 			$title = addslashes($this->Title);
-			$issystem = Convert::ToInt($this->Issystem);
+            $issystem = Convert::ToInt($this->Issystem);
+            $propertyid = addslashes($_REQUEST['property']);
 
 			if($res = $db->query("SELECT messagetemplateid FROM messagetemplate WHERE messagetemplateid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE messagetemplate SET fromaddress='$from',fromname='$fromname',replyto='$replyto',attachment='$attachment',subject='$subject',body='$body',status='$status',type='$type',title='$title',issystem='$issystem' WHERE messagetemplateid = '$id'");
+				$db->query("UPDATE messagetemplate SET fromaddress='$from',fromname='$fromname',replyto='$replyto',attachment='$attachment',`subject`='$subject',body='$body',`status`='$status',`type`='$type',title='$title',issystem='$issystem',propertyid='$propertyid' WHERE messagetemplateid = '$id'");
 			}
 			else
 			{
@@ -88,7 +88,7 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO messagetemplate(messagetemplateid,created,fromaddress,fromname,replyto,attachment,subject,body,status,type,title,issystem) VALUES ('$id','$created','$from','$fromname','$replyto','$attachment','$subject','$body','$status','$type','$title','$issystem')");
+				$db->query("INSERT INTO messagetemplate(messagetemplateid,created,fromaddress,fromname,replyto,attachment,`subject`,body,`status`,`type`,title,issystem,propertyid) VALUES ('$id','$created','$from','$fromname','$replyto','$attachment','$subject','$body','$status','$type','$title','$issystem','$propertyid')");
 			}
 		}
 
@@ -106,24 +106,29 @@
 			$ret = array();
 			$i = 0;
 
-			$res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND (fromaddress LIKE '%$term%' OR fromname LIKE '%$term%' OR replyto LIKE '%$term%' OR subject LIKE '%$term%' OR body LIKE '%$term%' OR type LIKE '%$term%' OR title LIKE '%$term%') ORDER BY id DESC");
+			$res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND (fromaddress LIKE '%$term%' OR fromname LIKE '%$term%' OR replyto LIKE '%$term%' OR `subject` LIKE '%$term%' OR body LIKE '%$term%' OR `type` LIKE '%$term%' OR title LIKE '%$term%') ORDER BY id DESC");
 			while(($row = $res->fetch_assoc()) != null)
 			{
-			    $ret[$i] = new Messagetemplate($subscriber);
-                $ret[$i]->Id = $row['messagetemplateid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->From = $row['fromaddress'];
-                $ret[$i]->Fromname = $row['fromname'];
-                $ret[$i]->Replyto = $row['replyto'];
-                $ret[$i]->Attachment = $row['attachment'];
-                $ret[$i]->Subject = $row['subject'];
-                $ret[$i]->Body = $row['body'];
-                $ret[$i]->Status = Convert::ToBool($row['status']);
-                $ret[$i]->Type = $row['type'];
-                $ret[$i]->Title = $row['title'];
-                $ret[$i]->Issystem = Convert::ToBool($row['issystem']);
-				$i++;
-			}
+                if ($row['propertyid'] == $_REQUEST['property']) :
+
+                    $ret[$i] = new Messagetemplate($subscriber);
+                    $ret[$i]->Id = $row['messagetemplateid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->From = $row['fromaddress'];
+                    $ret[$i]->Fromname = $row['fromname'];
+                    $ret[$i]->Replyto = $row['replyto'];
+                    $ret[$i]->Attachment = $row['attachment'];
+                    $ret[$i]->Subject = $row['subject'];
+                    $ret[$i]->Body = $row['body'];
+                    $ret[$i]->Status = Convert::ToBool($row['status']);
+                    $ret[$i]->Type = $row['type'];
+                    $ret[$i]->Title = $row['title'];
+                    $ret[$i]->Issystem = Convert::ToBool($row['issystem']);
+                    $i++;
+
+                endif;
+            }
+            
 			return $ret;
 		}
 
@@ -131,9 +136,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND ".$field." ='$term'");
+			$res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND ".$field." ='$term' AND propertyid = '$propertyid'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Messagetemplate($subscriber);
@@ -158,9 +164,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND propertyid = '$propertyid' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Messagetemplate($subscriber);
@@ -187,8 +194,9 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0");
+            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND propertyid = '$propertyid'");
             while(($row = $res->fetch_assoc()) != null)
             {
                 $ret[$i] = new Messagetemplate($subscriber);
@@ -266,8 +274,9 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND type='email'");
+            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND `type`='email' AND propertyid = '$propertyid'");
             $db->close();
             return $res->num_rows;
         }
@@ -277,8 +286,9 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND type='sms'");
+            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND `type`='sms' AND propertyid = '$propertyid'");
             $db->close();
             return $res->num_rows;
         }
@@ -289,8 +299,9 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND type='email'");
+            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND `type`='email' AND propertyid = '$propertyid'");
 
             while(($row = $res->fetch_assoc()) != null)
             {
@@ -317,8 +328,9 @@
             $db = $subscriber->GetDB();
             $ret = array();
             $i = 0;
+            $propertyid = $_REQUEST['property'];
 
-            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND type='sms'");
+            $res = $db->query("SELECT * FROM messagetemplate WHERE issystem=0 AND `type`='sms' AND propertyid = '$propertyid'");
 
             while(($row = $res->fetch_assoc()) != null)
             {

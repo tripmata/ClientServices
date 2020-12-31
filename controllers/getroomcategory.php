@@ -23,8 +23,9 @@
 
                 if($filter == "search list")
                 {
-                    $store = Roomcategory::All(new Subscriber($p->Databasename, $p->DatabaseUser, $p->DatabasePassword));
+                    $store = Roomcategory::All(new Subscriber(), $_REQUEST['property']);
                 }
+                
                 $ret->Total = count($store);
 
                 $start = (($ret->Page - 1) * $ret->Perpage);

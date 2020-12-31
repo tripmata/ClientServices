@@ -48,6 +48,8 @@
             $ret->status = "success";
             $ret->data = $vehicle;
             $ret->message = "Vehicle added";
+
+            
         }
     }
     echo json_encode($ret);

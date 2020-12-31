@@ -121,7 +121,6 @@
             
             $role->Property = $_REQUEST['property'];
 
-
             $role->Save();
 
             $ret->status = "success";

@@ -188,7 +188,7 @@
 			{
 				$db = DB::GetDB();
 
-				$res = $db->query("SELECT * FROM role WHERE roleid='$arg'");
+				$res = $db->query("SELECT * FROM `role` WHERE roleid='$arg'");
 
 				if($res->num_rows > 0)
 				{
@@ -272,22 +272,22 @@
             $poolpos = Convert::ToInt(is_a($this->Poolpos, "Access") ? $this->Poolpos->toInt() : $this->Poolpos);
             $barpos = Convert::ToInt(is_a($this->Barpos, "Access") ? $this->Barpos->toInt() : $this->Barpos);
             
-            $property = is_a($this->Property, "Property") ? $this->Property->Id : $this->Property;
+			$property = is_a($this->Property, "Property") ? $this->Property->Id : $this->Property;
 
-			if($res = $db->query("SELECT roleid FROM role WHERE roleid='$id'")->num_rows > 0)
+			if($res = $db->query("SELECT roleid FROM `role` WHERE roleid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE role SET booking='$booking',discount='$discount',customers='$customers',staff='$staff',rooms='$rooms',kitchen='$kitchen',bakery='$bakery',bar='$bar',laundry='$laundry',housekeeping='$housekeeping',pool='$pool',store='$store',event='$event',finance='$finance',branch='$branch',log='$log',report='$report',messaging='$messaging',webfront='$webfront',webconfig='$webconfig',settings='$settings',name='$name',system='$system',frontdesk='$frontdesk',barpos='$barpos',kitchenpos='$kitchenpos',bakerypos='$bakerypos',laundrypos='$laundrypos',poolpos='$poolpos',property='$property' WHERE roleid = '$id'");
+				$db->query("UPDATE `role` SET booking='$booking',discount='$discount',customers='$customers',staff='$staff',rooms='$rooms',kitchen='$kitchen',bakery='$bakery',bar='$bar',laundry='$laundry',housekeeping='$housekeeping',pool='$pool',store='$store',event='$event',finance='$finance',branch='$branch',log='$log',report='$report',messaging='$messaging',webfront='$webfront',webconfig='$webconfig',settings='$settings',name='$name',system='$system',frontdesk='$frontdesk',barpos='$barpos',kitchenpos='$kitchenpos',bakerypos='$bakerypos',laundrypos='$laundrypos',poolpos='$poolpos',property='$property' WHERE roleid = '$id'");
 			}
 			else
 			{
 				redo: ;
 				$id = Random::GenerateId(16);
-				if($db->query("SELECT roleid FROM role WHERE roleid='$id'")->num_rows > 0)
+				if($db->query("SELECT roleid FROM `role` WHERE roleid='$id'")->num_rows > 0)
 				{
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO role(roleid,created,booking,discount,customers,staff,rooms,kitchen,bakery,bar,laundry,housekeeping,pool,store,event,finance,branch,log,report,messaging,webfront,webconfig,settings,name,system,frontdesk,barpos,kitchenpos,bakerypos,laundrypos,poolpos,property) VALUES ('$id','$created','$booking','$discount','$customers','$staff','$rooms','$kitchen','$bakery','$bar','$laundry','$housekeeping','$pool','$store','$event','$finance','$branch','$log','$report','$messaging','$webfront','$webconfig','$settings','$name','$system','$frontdesk','$barpos','$kitchenpos','$bakerypos','$laundrypos','$poolpos','$property')");
+				$q = $db->query("INSERT INTO `role` (roleid,created,booking,discount,customers,staff,rooms,kitchen,bakery,bar,laundry,housekeeping,`pool`,store,`event`,finance,branch,`log`,report,messaging,webfront,webconfig,settings,`name`,`system`,frontdesk,barpos,kitchenpos,bakerypos,laundrypos,poolpos,property) VALUES ('$id','$created','$booking','$discount','$customers','$staff','$rooms','$kitchen','$bakery','$bar','$laundry','$housekeeping','$pool','$store','$event','$finance','$branch','$log','$report','$messaging','$webfront','$webconfig','$settings','$name','$system','$frontdesk','$barpos','$kitchenpos','$bakerypos','$laundrypos','$poolpos','$property')");
 			}
 		}
 
@@ -296,7 +296,7 @@
 			$db = DB::GetDB();
 
 			$id = $this->Id;
-			$db->query("DELETE FROM role WHERE roleid='$id' AND system =0");
+			$db->query("DELETE FROM `role` WHERE roleid = '$id' AND `system` = 0");
 
 			//Deleting Associated Objects
 			/*n			$this->Booking->Delete();
@@ -348,7 +348,7 @@
 			$db = DB::GetDB();
 			$i = 0;
 
-			$res = $db->query("SELECT * FROM role WHERE name LIKE '%$term%'");
+			$res = $db->query("SELECT * FROM `role` WHERE `name` LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Role($subscriber);
@@ -401,10 +401,10 @@
 			
 			$id = is_a($property, "Property") ? $property->Id : $property;
 
-			$res = $db->query("SELECT * FROM role WHERE property='$id' AND name LIKE '%$term%'");
+			$res = $db->query("SELECT * FROM `role` WHERE property='$id' AND `name` LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
-				$ret[$i] = new Role($subscriber);
+				$ret[$i] = new Role($GLOBALS['subscriber']);
 				$ret[$i]->Id = $row['roleid'];
 				$ret[$i]->Created = new WixDate(Convert::ToInt($row['created']));
 				$ret[$i]->Booking = new Access(Convert::ToInt($row['booking']));
@@ -452,7 +452,7 @@
 			$ret = array();
 			$i = 0;
 
-			$res = $db->query("SELECT roleid FROM role WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT roleid FROM `role` WHERE ".$field." ='$term'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = $row['roleid'];
@@ -467,7 +467,7 @@
 			$ret = array();
 			$i = 0;
 
-			$res = $db->query("SELECT roleid FROM role ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT roleid FROM `role` ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = $row['roleid'];
@@ -506,7 +506,7 @@
 				}
 			}
 			$i = 0;
-			$res = $db->query("SELECT * FROM role".$query." ORDER BY ".$orderBy." ".$order);
+			$res = $db->query("SELECT * FROM `role` ".$query." ORDER BY ".$orderBy." ".$order);
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Role($subscriber);

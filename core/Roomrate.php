@@ -184,29 +184,35 @@
             $ret = array();
             $i = 0;
 
-            $id = is_a($room, "Roomcategory") ? $room->Id : $room;
+			$id = is_a($room, "Roomcategory") ? $room->Id : $room;
 
-            $res = $db->query("SELECT * FROM roomrate WHERE room='$id'");
-            while(($row = $res->fetch_assoc()) != null)
-            {
-                $ret[$i] = new Roomrate($subscriber);
-                $ret[$i]->Id = $row['roomrateid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                if($constructCategory === true)
-                {
-                    $ret[$i]->Room = new Roomcategory($subscriber);
-                    $ret[$i]->Room->Initialize($row['room']);
-                }
-                else
-                {
-                    $ret[$i]->Room = $row['room'];
-                }
-                $ret[$i]->Startdate = new WixDate($row['startdate']);
-                $ret[$i]->Stopdate = new WixDate($row['stopdate']);
-                $ret[$i]->Rate = doubleval($row['rate']);
-                $ret[$i]->Status = Convert::ToBool($row['status']);
-                $i++;
-            }
+			$res = $db->query("SELECT * FROM roomrate WHERE room='$id'");
+			
+			if (is_object($res) && $res->num_rows > 0) :
+
+				while(($row = $res->fetch_assoc()) != null)
+				{
+					$ret[$i] = new Roomrate($subscriber);
+					$ret[$i]->Id = $row['roomrateid'];
+					$ret[$i]->Created = new WixDate($row['created']);
+					if($constructCategory === true)
+					{
+						$ret[$i]->Room = new Roomcategory($subscriber);
+						$ret[$i]->Room->Initialize($row['room']);
+					}
+					else
+					{
+						$ret[$i]->Room = $row['room'];
+					}
+					$ret[$i]->Startdate = new WixDate($row['startdate']);
+					$ret[$i]->Stopdate = new WixDate($row['stopdate']);
+					$ret[$i]->Rate = doubleval($row['rate']);
+					$ret[$i]->Status = Convert::ToBool($row['status']);
+					$i++;
+				}
+			
+			endif;
+			
             return $ret;
         }
 	}

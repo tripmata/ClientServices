@@ -2,18 +2,18 @@
 
 $ret = new stdClass();
 
+
 $ret->data = array();
 
 if ($GLOBALS['user']->Id != "")
 {
-    if ($GLOBALS['user']->Role->Customers->ReadAccess)
+    
+    if ($GLOBALS['user']->Role->Staff->ReadAccess)
     {
-        $property = new Property($_REQUEST['property']);
-
-        $ret->data = new Customer(new Subscriber($property->Databasename, $property->DatabaseUser, $property->DatabasePassword));
-        $ret->data->Initialize($_REQUEST['customerid']);
+        $staff = new Staff($GLOBALS['subscriber']);
+        $staff->Initialize($_REQUEST['staffid']);
+        $ret->data = $staff;
         $ret->status = "success";
-        $ret->message = "Customer data retrieved successfully";
     }
     else
     {

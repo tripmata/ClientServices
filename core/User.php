@@ -199,27 +199,30 @@
 		{
 			$db = DB::GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = isset($_REQUEST['propertyid']) ? $_REQUEST['propertyid'] : $_REQUEST['property'];
 
 			$term = is_a($subscriber, "Subscriber") ? $term : $subscriber;
 
-			$res = $db->query("SELECT * FROM user WHERE name LIKE '%$term%' OR surname LIKE '%$term%' OR username LIKE '%$term%'");
+			$res = $db->query("SELECT * FROM user WHERE name LIKE '%$term%' OR surname LIKE '%$term%' OR username LIKE '%$term%' OR userid = '$term'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
-                $ret[$i] = new User();
-                $ret[$i]->Id = $row['userid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Name = $row['name'];
-                $ret[$i]->Surname = $row['surname'];
-                $ret[$i]->Staffid = $row['staffid'];
-                $ret[$i]->Username = $row['username'];
-                $ret[$i]->Password = $row['password'];
-                $ret[$i]->Role = new Role();
-                $ret[$i]->Role->Initialize($row['role']);
-                $ret[$i]->Status = Convert::ToBool($row['status']);
-                $ret[$i]->Lastseen = new WixDate($row['lastseen']);
-                $ret[$i]->Property = $row['property'];
-                $i++;
+                if ($row['property'] == $property) :
+                    $ret[$i] = new User();
+                    $ret[$i]->Id = $row['userid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->Name = $row['name'];
+                    $ret[$i]->Surname = $row['surname'];
+                    $ret[$i]->Staffid = $row['staffid'];
+                    $ret[$i]->Username = $row['username'];
+                    $ret[$i]->Password = $row['password'];
+                    $ret[$i]->Role = new Role();
+                    $ret[$i]->Role->Initialize($row['role']);
+                    $ret[$i]->Status = Convert::ToBool($row['status']);
+                    $ret[$i]->Lastseen = new WixDate($row['lastseen']);
+                    $ret[$i]->Property = $row['property'];
+                    $i++;
+                endif;
 			}
 			return $ret;
 		}

@@ -169,7 +169,7 @@
 
             $id = is_a($property, "Property") ? $property->Id : $property;
 
-            $res = $db->query("SELECT * FROM reviews WHERE property='$id' ORDER BY id DESC");
+            $res = $db->query("SELECT * FROM reviews WHERE property='$id' ORDER BY id DESC LIMIT 0,5 ");
             while(($row = $res->fetch_assoc()) != null)
             {
                 $ret[$i] = new Reviews();

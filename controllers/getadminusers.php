@@ -20,7 +20,7 @@ if ($GLOBALS['user']->Id != "")
         $ret->Page = $page;
         $ret->Perpage = $perpage;
 
-        if($filter == "search list")
+        if ($filter == "search list")
         {
             $store = User::Search($GLOBALS['subscriber'], $filtervalue);
         }

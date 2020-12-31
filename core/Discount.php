@@ -45,7 +45,12 @@
 		public $Bookedroom = false;
 		public $Bookeddays = false;
 		public $Amountbased = false;
-		public $Ontotal = false;
+        public $Ontotal = false;
+        public $PaymentMode = false;
+        public $PaymentCollection = '';
+        public $DateFrom = '';
+        public $DateTo = '';
+        public $Message = '';
 
 		private $subscriber = null;
 
@@ -105,8 +110,239 @@
                     $this->Bookeddays = Convert::ToBool($row['bookeddays']);
                     $this->Amountbased = Convert::ToBool($row['amountbased']);
                     $this->Ontotal = Convert::ToBool($row['ontotal']);
+                    $this->PaymentMode = Convert::ToBool($row['paymentmode']);
+                    $this->PaymentCollection = $row['paymentCollection'];
+                    $this->LoadPeriod($row);
                 }
             }
+        }
+
+        public function LoadPeriod($row)
+        {
+            $this->DateFrom = (strlen($row['fromdate']) > 4) ? date('m/d/Y', $row['fromdate']) : '';
+            $this->DateTo = (strlen($row['todate']) > 4) ? date('m/d/Y', $row['todate']) : '';
+        }
+
+        public function sameConditionDoesNotApply() : bool
+        {
+            // @var string $property
+            $property = $_REQUEST['property'];
+
+            // get rooms
+            $rooms = $this->Booking;
+
+            // @var bool $continue
+            $continue = true;
+
+            // for autoapply
+            if ($this->Autoapply)
+            {
+                // get db
+                $db = DB::GetDB();
+
+                // run loop
+                foreach ($rooms as $room)
+                {
+                    // check 
+                    $query = $db->query("SELECT * FROM discount WHERE booking LIKE '%$room%' AND `status` = 1 AND propertyid = '$property'");
+
+                    // get room name
+                    $roomQuery = $db->query("SELECT `name` FROM roomcategory WHERE roomcategoryid = '$room'");
+
+                    // @var string $roomName
+                    $roomName = '';
+
+                    // check query
+                    if ($roomQuery->num_rows > 0)
+                    {
+                        // run query
+                        $roomQuery = $roomQuery->fetch_assoc();
+
+                        // get room name
+                        $roomName = 'for ' . $roomQuery['name'];
+                    }
+
+                    // run now
+                    if ($query->num_rows > 0)
+                    {
+                        while (($row = $query->fetch_assoc()) != null)
+                        {
+                            if ($this->PaymentMode == 'true')
+                            {
+                                if (intval($row['paymentmode']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Payment condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Ontotal)
+                            {
+                                if (intval($row['ontotal']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Total condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Amountbased)
+                            {   
+                                if (intval($row['amountbased']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Amount condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Bookeddays)
+                            {
+                                if (intval($row['bookeddays']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Booked Days condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Bookedroom)
+                            {
+                                if (intval($row['bookedroom']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Booked room condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Quantity)
+                            {
+                                if (intval($row['quantity']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Quantity condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Offlineorder)
+                            {
+                                if (intval($row['offlineorder']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Frontdesk booking condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Onlineorder)
+                            {
+                                if (intval($row['onlineorder']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Online booking condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Formerorder)
+                            {
+                                if (intval($row['formerorder']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Formerly booked condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Bookingcount)
+                            {
+                                if (intval($row['bookingcount']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Booking count condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Timebased)
+                            {   
+                                if (intval($row['timebased']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply Time based condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Periodic)
+                            {
+                                if (intval($row['peiodic']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply a Date Period condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                            elseif ($this->Isstaff)
+                            {
+                                if (intval($row['isstaff']) == 1)
+                                {
+                                    // log message
+                                    $this->Message = 'Cannot apply staff condition ' . $roomName;
+
+                                    // stop execution
+                                    $continue = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // can we break out?
+                    if ($continue === false) break;
+
+                }
+            }
+
+            // add reason 
+            if ($continue === false)
+            {
+                if ($roomName !== '')
+                {
+                    $this->Message .= '. Reason be that, this room already contain a active automatic discount with this condition.';
+                }
+            }
+
+            // can continue
+            return $continue;
         }
 
 		public function Save()
@@ -152,11 +388,16 @@
 			$bookedroom = Convert::ToInt($this->Bookedroom);
 			$bookeddays = Convert::ToInt($this->Bookeddays);
 			$amountbased = Convert::ToInt($this->Amountbased);
-			$ontotal = Convert::ToInt($this->Ontotal);
+            $ontotal = Convert::ToInt($this->Ontotal);
+            $property = $_REQUEST['property'];
+            $paymentMode = $this->PaymentMode == 'true' ? 1 : 0;
+            $paymentCollection = addslashes($this->PaymentCollection);
+            $datefrom = $this->DateFrom;
+            $dateto = $this->DateTo;
 
 			if($res = $db->query("SELECT discountid FROM discount WHERE discountid='$id'")->num_rows > 0)
 			{
-				$db->query("UPDATE discount SET name='$name',booking='$booking',food='$food',drinks='$drinks',pastries='$pastries',laundry='$laundry',pool='$pool',services='$services',value='$value',bypercentage='$bypercentage',status='$status',autoapply='$autoapply',fromamount='$fromamount',toamount='$toamount',fromcount='$fromcount',tocount='$tocount',fromhour='$fromhour',tohour='$tohour',fromminuite='$fromminuite',tominuite='$tominuite',fromday='$fromday',today='$today',frommonth='$frommonth',tomonth='$tomonth',frommeridean='$frommeridean',tomeridean='$tomeridean',isstaff='$isstaff',peiodic='$peiodic',timebased='$timebased',bookingcount='$bookingcount',formerorder='$formerorder',onlineorder='$onlineorder',offlineorder='$offlineorder',quantity='$quantity',bookedroom='$bookedroom',bookeddays='$bookeddays',amountbased='$amountbased',ontotal='$ontotal' WHERE discountid = '$id'");
+				$db->query("UPDATE discount SET `name`='$name',booking='$booking',food='$food',drinks='$drinks',pastries='$pastries',laundry='$laundry',`pool`='$pool',services='$services',`value`='$value',bypercentage='$bypercentage',`status`='$status',autoapply='$autoapply',fromamount='$fromamount',toamount='$toamount',fromcount='$fromcount',tocount='$tocount',fromhour='$fromhour',tohour='$tohour',fromminuite='$fromminuite',tominuite='$tominuite',fromday='$fromday',today='$today',frommonth='$frommonth',tomonth='$tomonth',frommeridean='$frommeridean',tomeridean='$tomeridean',isstaff='$isstaff',peiodic='$peiodic',timebased='$timebased',bookingcount='$bookingcount',formerorder='$formerorder',onlineorder='$onlineorder',offlineorder='$offlineorder',quantity='$quantity',bookedroom='$bookedroom',bookeddays='$bookeddays',amountbased='$amountbased',ontotal='$ontotal',paymentmode=$paymentMode,paymentCollection='$paymentCollection',fromdate='$datefrom',todate='$dateto' WHERE discountid = '$id'");
 			}
 			else
 			{
@@ -167,8 +408,8 @@
 					goto redo;
 				}
 				$this->Id = $id;
-				$db->query("INSERT INTO discount(discountid,created,name,booking,food,drinks,pastries,laundry,pool,services,value,bypercentage,status,autoapply,fromamount,toamount,fromcount,tocount,fromhour,tohour,fromminuite,tominuite,fromday,today,frommonth,tomonth,frommeridean,tomeridean,isstaff,peiodic,timebased,bookingcount,formerorder,onlineorder,offlineorder,quantity,bookedroom,bookeddays,amountbased,ontotal) VALUES ('$id','$created','$name','$booking','$food','$drinks','$pastries','$laundry','$pool','$services','$value','$bypercentage','$status','$autoapply','$fromamount','$toamount','$fromcount','$tocount','$fromhour','$tohour','$fromminuite','$tominuite','$fromday','$today','$frommonth','$tomonth','$frommeridean','$tomeridean','$isstaff','$peiodic','$timebased','$bookingcount','$formerorder','$onlineorder','$offlineorder','$quantity','$bookedroom','$bookeddays','$amountbased','$ontotal')");
-			}
+				$db->query("INSERT INTO discount (discountid,created,`name`,booking,food,drinks,pastries,laundry,`pool`,services,`value`,bypercentage,`status`,autoapply,fromamount,toamount,fromcount,tocount,fromhour,tohour,fromminuite,tominuite,fromday,today,frommonth,tomonth,frommeridean,tomeridean,isstaff,peiodic,timebased,bookingcount,formerorder,onlineorder,offlineorder,quantity,bookedroom,bookeddays,amountbased,ontotal,propertyid,paymentmode,paymentCollection,fromdate,todate) VALUES ('$id','$created','$name','$booking','$food','$drinks','$pastries','$laundry','$pool','$services','$value','$bypercentage','$status','$autoapply','$fromamount','$toamount','$fromcount','$tocount','$fromhour','$tohour','$fromminuite','$tominuite','$fromday','$today','$frommonth','$tomonth','$frommeridean','$tomeridean','$isstaff','$peiodic','$timebased','$bookingcount','$formerorder','$onlineorder','$offlineorder','$quantity','$bookedroom','$bookeddays','$amountbased','$ontotal','$property',$paymentMode,'$paymentCollection','$datefrom','$dateto')");
+            }
 		}
 
 		public function Delete()
@@ -183,53 +424,61 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
 			$res = $db->query("SELECT * FROM discount WHERE name LIKE '%$term%' OR booking LIKE '%$term%' OR food LIKE '%$term%' OR drinks LIKE '%$term%' OR pastries LIKE '%$term%' OR laundry LIKE '%$term%' OR pool LIKE '%$term%' OR services LIKE '%$term%' OR value LIKE '%$term%' OR bypercentage LIKE '%$term%' OR status LIKE '%$term%' OR autoapply LIKE '%$term%' OR fromamount LIKE '%$term%' OR toamount LIKE '%$term%' OR fromcount LIKE '%$term%' OR tocount LIKE '%$term%' OR fromhour LIKE '%$term%' OR tohour LIKE '%$term%' OR fromminuite LIKE '%$term%' OR tominuite LIKE '%$term%' OR fromday LIKE '%$term%' OR today LIKE '%$term%' OR frommonth LIKE '%$term%' OR tomonth LIKE '%$term%' OR frommeridean LIKE '%$term%' OR tomeridean LIKE '%$term%' OR isstaff LIKE '%$term%' OR peiodic LIKE '%$term%' OR timebased LIKE '%$term%' OR bookingcount LIKE '%$term%' OR formerorder LIKE '%$term%' OR onlineorder LIKE '%$term%' OR offlineorder LIKE '%$term%' OR quantity LIKE '%$term%' OR bookedroom LIKE '%$term%' OR bookeddays LIKE '%$term%' OR amountbased LIKE '%$term%'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
-                $ret[$i] = new Discount($subscriber);
-                $ret[$i]->Id = $row['discountid'];
-                $ret[$i]->Created = new WixDate($row['created']);
-                $ret[$i]->Name = $row['name'];
-                $ret[$i]->Booking = json_decode($row['booking']);
-                $ret[$i]->Food = json_decode($row['food']);
-                $ret[$i]->Drinks = json_decode($row['drinks']);
-                $ret[$i]->Pastries = json_decode($row['pastries']);
-                $ret[$i]->Laundry = json_decode($row['laundry']);
-                $ret[$i]->Pool = json_decode($row['pool']);
-                $ret[$i]->Services = json_decode($row['services']);
-                $ret[$i]->Value = $row['value'];
-                $ret[$i]->Bypercentage = Convert::ToBool($row['bypercentage']);
-                $ret[$i]->Status = Convert::ToBool($row['status']);
-                $ret[$i]->Autoapply = Convert::ToBool($row['autoapply']);
-                $ret[$i]->Fromamount = $row['fromamount'];
-                $ret[$i]->Toamount = $row['toamount'];
-                $ret[$i]->Fromcount = $row['fromcount'];
-                $ret[$i]->Tocount = $row['tocount'];
-                $ret[$i]->Fromhour = $row['fromhour'];
-                $ret[$i]->Tohour = $row['tohour'];
-                $ret[$i]->Fromminuite = $row['fromminuite'];
-                $ret[$i]->Tominuite = $row['tominuite'];
-                $ret[$i]->Fromday = $row['fromday'];
-                $ret[$i]->Today = $row['today'];
-                $ret[$i]->Frommonth = $row['frommonth'];
-                $ret[$i]->Tomonth = $row['tomonth'];
-                $ret[$i]->Frommeridean = $row['frommeridean'];
-                $ret[$i]->Tomeridean = $row['tomeridean'];
-                $ret[$i]->Isstaff = Convert::ToBool($row['isstaff']);
-                $ret[$i]->Periodic = Convert::ToBool($row['peiodic']);
-                $ret[$i]->Timebased = Convert::ToBool($row['timebased']);
-                $ret[$i]->Bookingcount = Convert::ToBool($row['bookingcount']);
-                $ret[$i]->Formerorder = Convert::ToBool($row['formerorder']);
-                $ret[$i]->Onlineorder = Convert::ToBool($row['onlineorder']);
-                $ret[$i]->Offlineorder = Convert::ToBool($row['offlineorder']);
-                $ret[$i]->Quantity = Convert::ToBool($row['quantity']);
-                $ret[$i]->Bookedroom = Convert::ToBool($row['bookedroom']);
-                $ret[$i]->Bookeddays = Convert::ToBool($row['bookeddays']);
-                $ret[$i]->Amountbased = Convert::ToBool($row['amountbased']);
-                $ret[$i]->Ontotal = Convert::ToBool($row['ontotal']);
-				$i++;
+                if ($row['propertyid'] == $property) :
+
+                    $ret[$i] = new Discount($subscriber);
+                    $ret[$i]->Id = $row['discountid'];
+                    $ret[$i]->Created = new WixDate($row['created']);
+                    $ret[$i]->Name = $row['name'];
+                    $ret[$i]->Booking = json_decode($row['booking']);
+                    $ret[$i]->Food = json_decode($row['food']);
+                    $ret[$i]->Drinks = json_decode($row['drinks']);
+                    $ret[$i]->Pastries = json_decode($row['pastries']);
+                    $ret[$i]->Laundry = json_decode($row['laundry']);
+                    $ret[$i]->Pool = json_decode($row['pool']);
+                    $ret[$i]->Services = json_decode($row['services']);
+                    $ret[$i]->Value = $row['value'];
+                    $ret[$i]->Bypercentage = Convert::ToBool($row['bypercentage']);
+                    $ret[$i]->Status = Convert::ToBool($row['status']);
+                    $ret[$i]->Autoapply = Convert::ToBool($row['autoapply']);
+                    $ret[$i]->Fromamount = $row['fromamount'];
+                    $ret[$i]->Toamount = $row['toamount'];
+                    $ret[$i]->Fromcount = $row['fromcount'];
+                    $ret[$i]->Tocount = $row['tocount'];
+                    $ret[$i]->Fromhour = $row['fromhour'];
+                    $ret[$i]->Tohour = $row['tohour'];
+                    $ret[$i]->Fromminuite = $row['fromminuite'];
+                    $ret[$i]->Tominuite = $row['tominuite'];
+                    $ret[$i]->Fromday = $row['fromday'];
+                    $ret[$i]->Today = $row['today'];
+                    $ret[$i]->Frommonth = $row['frommonth'];
+                    $ret[$i]->Tomonth = $row['tomonth'];
+                    $ret[$i]->Frommeridean = $row['frommeridean'];
+                    $ret[$i]->Tomeridean = $row['tomeridean'];
+                    $ret[$i]->Isstaff = Convert::ToBool($row['isstaff']);
+                    $ret[$i]->Periodic = Convert::ToBool($row['peiodic']);
+                    $ret[$i]->Timebased = Convert::ToBool($row['timebased']);
+                    $ret[$i]->Bookingcount = Convert::ToBool($row['bookingcount']);
+                    $ret[$i]->Formerorder = Convert::ToBool($row['formerorder']);
+                    $ret[$i]->Onlineorder = Convert::ToBool($row['onlineorder']);
+                    $ret[$i]->Offlineorder = Convert::ToBool($row['offlineorder']);
+                    $ret[$i]->Quantity = Convert::ToBool($row['quantity']);
+                    $ret[$i]->Bookedroom = Convert::ToBool($row['bookedroom']);
+                    $ret[$i]->Bookeddays = Convert::ToBool($row['bookeddays']);
+                    $ret[$i]->Amountbased = Convert::ToBool($row['amountbased']);
+                    $ret[$i]->Ontotal = Convert::ToBool($row['ontotal']);
+                    $ret[$i]->PaymentMode = Convert::ToBool($row['paymentmode']);
+                    $ret[$i]->PaymentCollection = $row['paymentCollection'];
+                    $ret[$i]->LoadPeriod($row);
+                    $i++;
+
+                endif;
 			}
 			return $ret;
 		}
@@ -238,9 +487,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM discount WHERE ".$field." ='$term'");
+			$res = $db->query("SELECT * FROM discount WHERE ".$field." ='$term' AND propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Discount($subscriber);
@@ -284,6 +534,9 @@
                 $ret[$i]->Bookeddays = Convert::ToBool($row['bookeddays']);
                 $ret[$i]->Amountbased = Convert::ToBool($row['amountbased']);
                 $ret[$i]->Ontotal = Convert::ToBool($row['ontotal']);
+                $ret[$i]->PaymentMode = Convert::ToBool($row['paymentmode']);
+                $ret[$i]->PaymentCollection = $row['paymentCollection'];
+                $ret[$i]->LoadPeriod($row);
 				$i++;
 			}
 			return $ret;
@@ -293,9 +546,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM discount ORDER BY ".$field." ".$order."");
+			$res = $db->query("SELECT * FROM discount WHERE propertyid = '$property' ORDER BY ".$field." ".$order."");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Discount($subscriber);
@@ -339,6 +593,9 @@
                 $ret[$i]->Bookeddays = Convert::ToBool($row['bookeddays']);
                 $ret[$i]->Amountbased = Convert::ToBool($row['amountbased']);
                 $ret[$i]->Ontotal = Convert::ToBool($row['ontotal']);
+                $ret[$i]->PaymentMode = Convert::ToBool($row['paymentmode']);
+                $ret[$i]->PaymentCollection = $row['paymentCollection'];
+                $ret[$i]->LoadPeriod($row);
 				$i++;
 			}
 			return $ret;
@@ -348,9 +605,10 @@
 		{
 			$db = $subscriber->GetDB();
 			$ret = array();
-			$i = 0;
+            $i = 0;
+            $property = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM discount");
+			$res = $db->query("SELECT * FROM discount WHERE propertyid = '$property'");
 			while(($row = $res->fetch_assoc()) != null)
 			{
 				$ret[$i] = new Discount($subscriber);
@@ -394,11 +652,13 @@
 				$ret[$i]->Bookeddays = Convert::ToBool($row['bookeddays']);
 				$ret[$i]->Amountbased = Convert::ToBool($row['amountbased']);
                 $ret[$i]->Ontotal = Convert::ToBool($row['ontotal']);
+                $ret[$i]->PaymentMode = Convert::ToBool($row['paymentmode']);
+                $ret[$i]->PaymentCollection = $row['paymentCollection'];
+                $ret[$i]->LoadPeriod($row);
 				$i++;
 			}
 			return $ret;
 		}
-
 
 		public function Matchitem($item)
         {
@@ -477,7 +737,6 @@
             return $ret;
         }
 
-
 		public function Coversbooking()
         {
             return count($this->Booking) > 0 ? true : false;
@@ -507,6 +766,7 @@
         {
             return count($this->Pool) > 0 ? true : false;
         }
+
         public function Coversservices()
         {
             return count($this->Services) > 0 ? true : false;
@@ -881,7 +1141,6 @@
             return $orderlist;
         }
 
-
         public static function Barcovered(Subscriber $subscriber)
         {
             $discounts = Discount::All($subscriber);
@@ -897,6 +1156,7 @@
             }
             return $ret;
         }
+
         public static function Foodcovered(Subscriber $subscriber)
         {
             $discounts = Discount::All($subscriber);
@@ -912,6 +1172,7 @@
             }
             return $ret;
         }
+
         public static function Pastrycovered(Subscriber $subscriber)
         {
             $discounts = Discount::All($subscriber);
@@ -927,6 +1188,7 @@
             }
             return $ret;
         }
+
         public static function Laundrycovered(Subscriber $subscriber)
         {
             $discounts = Discount::All($subscriber);
@@ -942,6 +1204,7 @@
             }
             return $ret;
         }
+
         public static function Poolcovered(Subscriber $subscriber)
         {
             $discounts = Discount::All($subscriber);
@@ -957,6 +1220,7 @@
             }
             return $ret;
         }
+
         public static function Servicescovered(Subscriber $subscriber)
         {
             $discounts = Discount::All($subscriber);

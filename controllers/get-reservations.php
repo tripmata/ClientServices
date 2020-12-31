@@ -42,7 +42,7 @@ if ($GLOBALS['user']->Id != "")
                 $store = Reservation::Abandoned($property);
             }
         }
-        $ret->today = count(Reservation::DueToday($property));
+        $ret->today = Reservation::DueTodayCount($property);
         $ret->abandoned = count(Reservation::Abandoned($property));
         $ret->Total = count($store);
 

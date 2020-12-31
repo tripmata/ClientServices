@@ -111,9 +111,9 @@
 			$ret = array();
 			$i = 0;
 
-			$id = is_a($property, "Property") ? $property->Id : $property;
+			$id = $_REQUEST['property'];
 
-			$res = $db->query("SELECT * FROM message WHERE property='$id' AND (name LIKE '%$term%' OR surname LIKE '%$term%' OR phone LIKE '%$term%' OR email LIKE '%$term%' OR status LIKE '%$term%' OR stared LIKE '%$term%' OR subject LIKE '%$term%' OR body LIKE '%$term%') ORDER BY id DESC");
+			$res = $db->query("SELECT * FROM `message` WHERE property='$id' AND (`name` LIKE '%$term%' OR surname LIKE '%$term%' OR phone LIKE '%$term%' OR email LIKE '%$term%' OR `status` LIKE '%$term%' OR stared LIKE '%$term%' OR `subject` LIKE '%$term%' OR body LIKE '%$term%') ORDER BY id DESC");
 			while(($row = $res->fetch_assoc()) != null)
 			{
                 $ret[$i] = new Message();

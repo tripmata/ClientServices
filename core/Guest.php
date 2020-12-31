@@ -153,18 +153,24 @@
 			}
 		}
 
-		public function Delete()
+		public function Delete($id=null)
 		{
 			$db = $this->subscriber->GetDB();
+			$property = $_REQUEST['property'];
 
-			$id = $this->Id;
-			$db->query("DELETE FROM guest WHERE guestid='$id'");
+			$customer = $db->query("SELECT isBaned FROM  customerByProperty WHERE customerid='$id' AND propertyid = '$property'");
 
-			//Deleting Associated Objects
-			/*
-			$customer = $this->GetCustomer();
-			$customer->Delete();
-			*/
+			// are we good ??
+			if ($customer->num_rows > 0)
+			{
+				$customer = $customer->fetch_assoc();
+
+				// check if customer has been banned previously
+				$mode = $customer['isBaned'] == 1 ? 0 : 1;
+
+				// update customer profile
+				$db->query("UPDATE customerByProperty SET isBaned = $mode WHERE customerid='$id' AND propertyid = '$property'");
+			}
 		}
 
 		public static function Search(Subscriber $subscriber, $term='')
